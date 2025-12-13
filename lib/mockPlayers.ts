@@ -1,0 +1,26 @@
+import type { Player } from "@/types/player";
+
+export const mockPlayers: Player[] = [
+  { id: "p1", name: "أحمد علي", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p2", name: "بلال خان", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p3", name: "كريم منصور", photo: "/players/placeholder.svg", preferredPosition: "ATT" },
+  { id: "p4", name: "سلمان عيسى", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p5", name: "ياسر حمدان", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p6", name: "فريد حسين", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p7", name: "طارق سالم", photo: "/players/placeholder.svg", preferredPosition: "ATT" },
+  { id: "p8", name: "حسام فريد", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p9", name: "إياد عبدو", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p10", name: "جمال لؤي", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p11", name: "كامل وهاب", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p12", name: "لؤي مراد", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p13", name: "مازن رفيق", photo: "/players/placeholder.svg", preferredPosition: "ATT" },
+  { id: "p14", name: "نبيل سعد", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p15", name: "عمر رياض", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p16", name: "سيف مرسي", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p17", name: "قيس ناصر", photo: "/players/placeholder.svg", preferredPosition: "ATT" },
+  { id: "p18", name: "رامي جابر", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p19", name: "سامي عتيق", photo: "/players/placeholder.svg", preferredPosition: "DEF" },
+  { id: "p20", name: "توفيق أمين", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p21", name: "وليد منصور", photo: "/players/placeholder.svg", preferredPosition: "MID" },
+  { id: "p22", name: "يزن صادق", photo: "/players/placeholder.svg", preferredPosition: "ATT" },
+];
