@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Player, Position } from "@/types/player";
 import type { AssignmentMap, SquadSlot, TeamId } from "@/types/squad";
 import { PositionSlot } from "./PositionSlot";
@@ -28,9 +28,11 @@ export type SquadBoardProps = {
   assignments: AssignmentMap;
   playersById: Record<string, Player>;
   poolCount: number;
+  onMissPlayer: (playerId: string) => void;
 };
 
-export const SquadBoard = ({ slots, assignments, playersById, poolCount }: SquadBoardProps) => {
+export const SquadBoard = ({ slots, assignments, playersById, poolCount, onMissPlayer }: SquadBoardProps) => {
+  const [activeMenuPlayerId, setActiveMenuPlayerId] = useState<string | null>(null);
   const slotMap = useMemo(() => {
     return slots.reduce<Record<string, SquadSlot>>((acc, slot) => {
       acc[slot.id] = slot;
@@ -73,7 +75,7 @@ export const SquadBoard = ({ slots, assignments, playersById, poolCount }: Squad
     .join(" vs ");
 
   return (
-    <section className="flex flex-col gap-4 sm:gap-5">
+    <section className="flex flex-col gap-4 sm:gap-5" onClick={() => setActiveMenuPlayerId(null)}>
       <header className="flex flex-wrap items-center justify-between gap-4 px-4 sm:px-0">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50/80">Squad Board</p>
@@ -117,7 +119,7 @@ export const SquadBoard = ({ slots, assignments, playersById, poolCount }: Squad
                           {lineSlots.map((slot) => {
                             const playerId = assignments[slot.id];
                             const player = playerId ? playersById[playerId] : undefined;
-                            return <PositionSlot key={slot.id} slot={slot} player={player} />;
+                            return <PositionSlot key={slot.id} slot={slot} player={player} onMissPlayer={onMissPlayer} activeMenuPlayerId={activeMenuPlayerId} setActiveMenuPlayerId={setActiveMenuPlayerId} />;
                           })}
                         </div>
                       </div>
@@ -141,7 +143,7 @@ export const SquadBoard = ({ slots, assignments, playersById, poolCount }: Squad
                           {lineSlots.map((slot) => {
                             const playerId = assignments[slot.id];
                             const player = playerId ? playersById[playerId] : undefined;
-                            return <PositionSlot key={slot.id} slot={slot} player={player} />;
+                            return <PositionSlot key={slot.id} slot={slot} player={player} onMissPlayer={onMissPlayer} activeMenuPlayerId={activeMenuPlayerId} setActiveMenuPlayerId={setActiveMenuPlayerId} />;
                           })}
                         </div>
                       </div>

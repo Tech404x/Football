@@ -12,16 +12,16 @@ import { TopControls } from "@/components/TopControls";
 import { PlayerBadge } from "@/components/PositionSlot";
 import { mockPlayers } from "@/lib/mockPlayers";
 import {
-  FORMATION_SLOTS,
   autoAssignPlayers,
   createEmptyAssignments,
   ensureAssignmentsIntegrity,
   removePlayerFromAssignments,
   swapPlayerIntoSlot,
 } from "@/lib/squadLogic";
-import { loadState, saveState } from "@/lib/storage";
+import { FORMATION_SLOTS } from "@/lib/squadLogic";
+import { loadState } from "@/lib/storage";
 import type { Player } from "@/types/player";
-import type { AssignmentMap } from "@/types/squad";
+import type { AssignmentMap, SquadSlot, TeamId } from "@/types/squad";
 
 export default function HomePage() {
   const [players, setPlayers] = useState<Player[]>(mockPlayers);
@@ -53,12 +53,7 @@ export default function HomePage() {
     setStateReady(true);
   }, []);
 
-  useEffect(() => {
-    if (!stateReady) {
-      return;
-    }
-    saveState({ players, assignments, showPool, markedPlayerIds });
-  }, [players, assignments, showPool, markedPlayerIds, stateReady]);
+  // Removed auto-save to local storage
 
   useEffect(() => {
     if (!lastSavedMessage) {
@@ -137,10 +132,6 @@ export default function HomePage() {
     setDraggingPlayerId(undefined);
   };
 
-  const handleSave = () => {
-    saveState({ players, assignments, showPool, markedPlayerIds });
-    setLastSavedMessage(`Saved at ${new Date().toLocaleTimeString()}`);
-  };
 
   const handleReset = () => {
     setAssignments(createEmptyAssignments());
@@ -151,14 +142,21 @@ export default function HomePage() {
     if (markedPlayers.length === 0) {
       return;
     }
-    setAssignments(autoAssignPlayers(markedPlayers));
+    // Collect currently assigned players and unassigned marked players
+    const currentAssignedIds = Object.values(assignments).filter(Boolean) as string[];
+    const currentAssignedPlayers = currentAssignedIds.map(id => playersById[id]).filter(Boolean);
+    const unassignedMarkedPlayers = markedPlayers.filter(player => !assignedPlayers.has(player.id));
+    const allToAssign = [...currentAssignedPlayers, ...unassignedMarkedPlayers];
+    setAssignments(autoAssignPlayers(allToAssign));
   };
 
   const handleRegenerate = () => {
-    if (markedPlayers.length === 0) {
+    const assignedPlayerIds = Object.values(assignments).filter(Boolean) as string[];
+    if (assignedPlayerIds.length === 0) {
       return;
     }
-    const shuffled = [...markedPlayers];
+    const assignedPlayers = assignedPlayerIds.map(id => playersById[id]).filter(Boolean);
+    const shuffled = [...assignedPlayers];
     for (let i = shuffled.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -185,6 +183,50 @@ export default function HomePage() {
       }
       return [...prev, playerId];
     });
+  };
+
+  const handleMissPlayer = (playerId: string) => {
+    setAssignments((current) => {
+      let next = removePlayerFromAssignments(playerId, current);
+      // Balance teams by moving a player if diff > 1
+      const assignedIds = Object.values(next).filter(Boolean) as string[];
+      if (assignedIds.length === 0) return next;
+      const slotMap = FORMATION_SLOTS.reduce<Record<string, SquadSlot>>((acc, slot) => {
+        acc[slot.id] = slot;
+        return acc;
+      }, {});
+      const counts: Record<TeamId, number> = { "team-a": 0, "team-b": 0 };
+      assignedIds.forEach(id => {
+        const slotId = Object.entries(next).find(([, pid]) => pid === id)?.[0];
+        if (slotId) {
+          const slot = slotMap[slotId];
+          if (slot) counts[slot.teamId] += 1;
+        }
+      });
+      const diff = Math.abs(counts["team-a"] - counts["team-b"]);
+      if (diff <= 1) return next;
+      const majority: TeamId = counts["team-a"] > counts["team-b"] ? "team-a" : "team-b";
+      const minority: TeamId = majority === "team-a" ? "team-b" : "team-a";
+      const emptySlotInMinority = FORMATION_SLOTS.find(slot => slot.teamId === minority && !next[slot.id]);
+      if (!emptySlotInMinority) return next;
+      const playerToMove = assignedIds.find(id => {
+        const slotId = Object.entries(next).find(([, pid]) => pid === id)?.[0];
+        if (slotId) {
+          const slot = slotMap[slotId];
+          return slot?.teamId === majority;
+        }
+        return false;
+      });
+      if (playerToMove) {
+        const currentSlotId = Object.entries(next).find(([, pid]) => pid === playerToMove)?.[0];
+        if (currentSlotId) {
+          next[currentSlotId] = null;
+          next[emptySlotInMinority.id] = playerToMove;
+        }
+      }
+      return next;
+    });
+    setMarkedPlayerIds((prev) => prev.filter((id) => id !== playerId));
   };
 
   const exportBoardImage = async () => {
@@ -260,12 +302,12 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-100 px-4 py-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 pb-16">
         <TopControls
-          onSave={handleSave}
           onReset={handleReset}
           onAutoFill={handleAutoFill}
           onRegenerate={handleRegenerate}
           onAddPlayer={() => setModalOpen(true)}
           lastSavedMessage={lastSavedMessage}
+          isRegenerateDisabled={assignedPlayers.size === 0}
         />
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div
@@ -282,6 +324,7 @@ export default function HomePage() {
                 assignments={assignments}
                 playersById={playersById}
                 poolCount={availablePlayers.length}
+                onMissPlayer={handleMissPlayer}
               />
             </div>
             <PlayerPool

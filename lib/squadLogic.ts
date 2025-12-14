@@ -7,7 +7,7 @@ export const TEAM_LABELS: Record<TeamId, string> = {
 };
 
 const LINE_COUNTS: Record<Position, number> = {
-  ATT: 4,
+  ATT: 5,
   MID: 5,
   DEF: 5,
 };
@@ -136,7 +136,12 @@ export const autoAssignPlayers = (
 
   const getDiff = () => Math.abs(counts["team-a"] - counts["team-b"]);
   const totalPlayersAssigned = counts["team-a"] + counts["team-b"];
-  
+
+  // If all players are assigned, don't unassign to balance
+  if (totalPlayersAssigned === players.length) {
+    return assignments;
+  }
+
   // If total players is even, aim for exact split
   if (totalPlayersAssigned % 2 === 0) {
     const targetPerTeam = totalPlayersAssigned / 2;

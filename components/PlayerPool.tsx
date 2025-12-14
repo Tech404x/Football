@@ -152,13 +152,13 @@ export const PlayerPool = ({
     const priority = (player: Player) => {
       const marked = markedSet.has(player.id);
       const assigned = assignedSet.has(player.id);
-      if (marked && !assigned) {
+      if (!marked && !assigned) {
         return 0;
       }
-      if (marked && assigned) {
+      if (!marked && assigned) {
         return 1;
       }
-      if (!marked && !assigned) {
+      if (marked && !assigned) {
         return 2;
       }
       return 3;

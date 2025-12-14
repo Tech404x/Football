@@ -38,7 +38,7 @@ export const PlayerBadge = ({
   );
 };
 
-const SlotPlayer = ({ player, slot }: { player: Player; slot: SquadSlot }) => {
+const SlotPlayer = ({ player, slot, onMissPlayer, activeMenuPlayerId, setActiveMenuPlayerId }: { player: Player; slot: SquadSlot; onMissPlayer: (playerId: string) => void; activeMenuPlayerId: string | null; setActiveMenuPlayerId: (id: string | null) => void }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: player.id,
     data: { type: "player", playerId: player.id },
@@ -50,15 +50,40 @@ const SlotPlayer = ({ player, slot }: { player: Player; slot: SquadSlot }) => {
       }
     : undefined;
 
+  const showMenu = activeMenuPlayerId === player.id;
+
+  const handleClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setActiveMenuPlayerId(showMenu ? null : player.id);
+  };
+
+  const handleMiss = () => {
+    onMissPlayer(player.id);
+    setActiveMenuPlayerId(null);
+  };
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className={clsx("cursor-grab touch-none", isDragging && "opacity-80")}
-    >
-      <PlayerBadge player={player} teamId={slot.teamId} />
+    <div className="relative">
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...listeners}
+        {...attributes}
+        className={clsx("cursor-grab touch-none", isDragging && "opacity-80")}
+        onClick={handleClick}
+      >
+        <PlayerBadge player={player} teamId={slot.teamId} />
+      </div>
+      {showMenu && (
+        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10">
+          <button
+            onClick={handleMiss}
+            className="block w-full px-2 py-1 text-left text-xs bg-red-600 text-white hover:bg-red-700"
+          >
+            Absent
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -66,9 +91,12 @@ const SlotPlayer = ({ player, slot }: { player: Player; slot: SquadSlot }) => {
 export type PositionSlotProps = {
   slot: SquadSlot;
   player?: Player | null;
+  onMissPlayer: (playerId: string) => void;
+  activeMenuPlayerId: string | null;
+  setActiveMenuPlayerId: (id: string | null) => void;
 };
 
-export const PositionSlot = ({ slot, player }: PositionSlotProps) => {
+export const PositionSlot = ({ slot, player, onMissPlayer, activeMenuPlayerId, setActiveMenuPlayerId }: PositionSlotProps) => {
   const { isOver, setNodeRef } = useDroppable({
     id: slot.id,
     data: { type: "slot", slotId: slot.id },
@@ -84,7 +112,7 @@ export const PositionSlot = ({ slot, player }: PositionSlotProps) => {
         isEmpty && !isOver && "opacity-0",
       )}
     >
-      {player ? <SlotPlayer player={player} slot={slot} /> : null}
+      {player ? <SlotPlayer player={player} slot={slot} onMissPlayer={onMissPlayer} activeMenuPlayerId={activeMenuPlayerId} setActiveMenuPlayerId={setActiveMenuPlayerId} /> : null}
     </div>
   );
 };

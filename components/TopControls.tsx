@@ -2,12 +2,13 @@
 
 import clsx from "clsx";
 export type TopControlsProps = {
-  onSave: () => void;
+  onSave?: () => void;
   onReset: () => void;
   onAutoFill: () => void;
   onRegenerate: () => void;
   onAddPlayer: () => void;
   lastSavedMessage?: string;
+  isRegenerateDisabled?: boolean;
 };
 
 const ControlButton = ({
@@ -42,21 +43,22 @@ export const TopControls = ({
   onRegenerate,
   onAddPlayer,
   lastSavedMessage,
+  isRegenerateDisabled,
 }: TopControlsProps) => {
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-white/80 p-4 shadow">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-slate-900">Squad Selector</h1>
-        <p className="text-sm text-slate-500">Drag & drop to build your lineup. Everything is saved to this browser.</p>
+        <p className="text-sm text-slate-500">Drag & drop to build your lineup.</p>
         {lastSavedMessage && <p className="text-xs font-semibold text-emerald-600">{lastSavedMessage}</p>}
       </div>
       <div className="flex flex-col items-end gap-3">
         <div className="flex flex-wrap justify-end gap-2">
           <ControlButton label="Auto Fill" onClick={onAutoFill} variant="ghost" />
-          <ControlButton label="Regenerate" onClick={onRegenerate} variant="ghost" />
+          <ControlButton label="Regenerate" onClick={onRegenerate} variant="ghost" disabled={isRegenerateDisabled} />
           <ControlButton label="Add Player" onClick={onAddPlayer} variant="ghost" />
           <ControlButton label="Reset" onClick={onReset} variant="ghost" />
-          <ControlButton label="Save" onClick={onSave} variant="primary" />
+          {onSave && <ControlButton label="Save" onClick={onSave} variant="primary" />}
         </div>
       </div>
     </section>
