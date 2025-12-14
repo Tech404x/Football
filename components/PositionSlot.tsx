@@ -3,11 +3,39 @@
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
 import type { Player } from "@/types/player";
-import type { SquadSlot } from "@/types/squad";
+import type { SquadSlot, TeamId } from "@/types/squad";
 
 const jerseyClasses = {
   light: "bg-white text-emerald-700",
   dark: "bg-slate-900 text-white",
+};
+
+export const PlayerBadge = ({
+  player,
+  teamId,
+}: {
+  player: Player;
+  teamId: TeamId;
+}) => {
+  const variant = teamId === "team-a" ? "light" : "dark";
+  const firstName = player.name.trim().split(/\s+/)[0] ?? player.name;
+
+  return (
+    <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+      <div
+        className={clsx(
+          "flex items-center justify-center rounded-xl sm:rounded-2xl font-bold uppercase shadow-lg",
+          "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
+          jerseyClasses[variant],
+        )}
+      >
+        {player.preferredPosition}
+      </div>
+      <p className="text-sm sm:text-lg font-semibold text-white drop-shadow text-right" dir="rtl">
+        {player.name}
+      </p>
+    </div>
+  );
 };
 
 const SlotPlayer = ({ player, slot }: { player: Player; slot: SquadSlot }) => {
@@ -22,8 +50,6 @@ const SlotPlayer = ({ player, slot }: { player: Player; slot: SquadSlot }) => {
       }
     : undefined;
 
-  const variant = slot.teamId === "team-a" ? "light" : "dark";
-
   return (
     <div
       ref={setNodeRef}
@@ -32,19 +58,7 @@ const SlotPlayer = ({ player, slot }: { player: Player; slot: SquadSlot }) => {
       {...attributes}
       className={clsx("cursor-grab touch-none", isDragging && "opacity-80")}
     >
-      <div className="flex flex-col items-center gap-1">
-        <div
-          className={clsx(
-            "flex h-14 w-14 items-center justify-center rounded-2xl font-bold uppercase shadow-lg",
-            jerseyClasses[variant],
-          )}
-        >
-          {player.preferredPosition}
-        </div>
-        <p className="text-xs font-semibold text-white drop-shadow text-right" dir="rtl">
-          {player.name}
-        </p>
-      </div>
+      <PlayerBadge player={player} teamId={slot.teamId} />
     </div>
   );
 };
@@ -65,7 +79,7 @@ export const PositionSlot = ({ slot, player }: PositionSlotProps) => {
     <div
       ref={setNodeRef}
       className={clsx(
-        "flex min-h-[90px] w-full items-center justify-center rounded-3xl p-3 transition",
+        "flex min-h-[60px] sm:min-h-[90px] w-full items-center justify-center rounded-2xl sm:rounded-3xl p-2 sm:p-3 transition",
         isOver && "bg-emerald-400/10 ring-2 ring-emerald-200",
         isEmpty && !isOver && "opacity-0",
       )}

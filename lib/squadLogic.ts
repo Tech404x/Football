@@ -7,7 +7,7 @@ export const TEAM_LABELS: Record<TeamId, string> = {
 };
 
 const LINE_COUNTS: Record<Position, number> = {
-  ATT: 3,
+  ATT: 4,
   MID: 5,
   DEF: 5,
 };
@@ -117,6 +117,59 @@ export const autoAssignPlayers = (
 
   orderedSlots.forEach((slot) => claimPlayer(slot, (player) => player.preferredPosition === slot.position));
   orderedSlots.forEach((slot) => claimPlayer(slot, () => true));
+
+  const counts: Record<TeamId, number> = { "team-a": 0, "team-b": 0 };
+  const slotMap = slots.reduce<Record<string, SquadSlot>>((acc, slot) => {
+    acc[slot.id] = slot;
+    return acc;
+  }, {});
+
+  Object.entries(assignments).forEach(([slotId, playerId]) => {
+    if (!playerId) {
+      return;
+    }
+    const slot = slotMap[slotId];
+    if (slot) {
+      counts[slot.teamId] += 1;
+    }
+  });
+
+  const getDiff = () => Math.abs(counts["team-a"] - counts["team-b"]);
+  const totalPlayersAssigned = counts["team-a"] + counts["team-b"];
+  
+  // If total players is even, aim for exact split
+  if (totalPlayersAssigned % 2 === 0) {
+    const targetPerTeam = totalPlayersAssigned / 2;
+    while (counts["team-a"] > targetPerTeam) {
+      const slotToClear = [...orderedSlots]
+        .reverse()
+        .find((slot) => slot.teamId === "team-a" && assignments[slot.id]);
+      if (!slotToClear) break;
+      assignments[slotToClear.id] = null;
+      counts["team-a"] -= 1;
+    }
+    while (counts["team-b"] > targetPerTeam) {
+      const slotToClear = [...orderedSlots]
+        .reverse()
+        .find((slot) => slot.teamId === "team-b" && assignments[slot.id]);
+      if (!slotToClear) break;
+      assignments[slotToClear.id] = null;
+      counts["team-b"] -= 1;
+    }
+  } else {
+    // If total players is odd, allow 1 player difference
+    while (getDiff() > 1) {
+      const majority: TeamId = counts["team-a"] > counts["team-b"] ? "team-a" : "team-b";
+      const slotToClear = [...orderedSlots]
+        .reverse()
+        .find((slot) => slot.teamId === majority && assignments[slot.id]);
+      if (!slotToClear) {
+        break;
+      }
+      assignments[slotToClear.id] = null;
+      counts[majority] -= 1;
+    }
+  }
 
   return assignments;
 };

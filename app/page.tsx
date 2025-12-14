@@ -9,7 +9,7 @@ import { AddPlayerModal, type AddPlayerValues } from "@/components/AddPlayerModa
 import { PlayerPool, PLAYER_POOL_DROP_ID } from "@/components/PlayerPool";
 import { SquadBoard } from "@/components/SquadBoard";
 import { TopControls } from "@/components/TopControls";
-import { PlayerCard } from "@/components/PlayerCard";
+import { PlayerBadge } from "@/components/PositionSlot";
 import { mockPlayers } from "@/lib/mockPlayers";
 import {
   FORMATION_SLOTS,
@@ -43,6 +43,12 @@ export default function HomePage() {
       setAssignments(ensureAssignmentsIntegrity(stored.players, stored.assignments));
       setShowPool(stored.showPool);
       setMarkedPlayerIds(stored.markedPlayerIds ?? []);
+    } else {
+      // By default, mark all players as active except the specified inactive players
+      const inactivePlayerIds = ["p22", "p13", "p11", ""]; // صديق هباني, امين مبارك, معاذ الأزرق
+      const allPlayerIds = mockPlayers.map(player => player.id);
+      const activePlayerIds = allPlayerIds.filter(id => !inactivePlayerIds.includes(id));
+      setMarkedPlayerIds(activePlayerIds);
     }
     setStateReady(true);
   }, []);
@@ -87,7 +93,6 @@ export default function HomePage() {
   }, [players]);
 
   const assignedPlayers = useMemo(() => new Set(Object.values(assignments).filter(Boolean) as string[]), [assignments]);
-  const markedPlayerSet = useMemo(() => new Set(markedPlayerIds), [markedPlayerIds]);
   const availablePlayers = players.filter((player) => !assignedPlayers.has(player.id));
   const poolPlayers = players;
   const draggingPlayer = draggingPlayerId ? playersById[draggingPlayerId] : undefined;
@@ -265,13 +270,13 @@ export default function HomePage() {
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div
             className={clsx(
-              "grid gap-6 grid-cols-1",
+              "grid gap-6 grid-cols-1 items-stretch",
               showPool
                 ? "lg:grid-cols-[minmax(0,0.8fr)_minmax(0,0.45fr)]"
                 : "lg:grid-cols-[minmax(0,0.8fr)_minmax(0,0.2fr)]",
             )}
           >
-            <div ref={boardRef} className="h-full" data-export-board>
+            <div ref={boardRef} className="h-full w-full" data-export-board>
               <SquadBoard
                 slots={FORMATION_SLOTS}
                 assignments={assignments}
@@ -291,12 +296,8 @@ export default function HomePage() {
           </div>
           <DragOverlay dropAnimation={null}>
             {draggingPlayer ? (
-              <div className="w-64">
-                <PlayerCard
-                  player={draggingPlayer}
-                  dimmed={!markedPlayerSet.has(draggingPlayer.id)}
-                  note={draggingPlayer.preferredPosition}
-                />
+              <div className="w-32 rounded-3xl bg-emerald-900/70 px-3 py-2">
+                <PlayerBadge player={draggingPlayer} teamId="team-a" />
               </div>
             ) : null}
           </DragOverlay>

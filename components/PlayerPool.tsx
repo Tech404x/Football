@@ -2,7 +2,7 @@
 
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
-import { useMemo, type MouseEvent } from "react";
+import { useMemo, useRef, type MouseEvent } from "react";
 import type { Player } from "@/types/player";
 import { PlayerCard } from "./PlayerCard";
 
@@ -139,7 +139,12 @@ export const PlayerPool = ({
   onToggleMark,
   assignedPlayerIds,
 }: PlayerPoolProps) => {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const { isOver, setNodeRef } = useDroppable({ id: PLAYER_POOL_DROP_ID });
+  const setScrollRef = (node: HTMLDivElement | null) => {
+    scrollContainerRef.current = node;
+    setNodeRef(node);
+  };
   const markedSet = useMemo(() => new Set(markedPlayerIds), [markedPlayerIds]);
   const assignedSet = useMemo(() => new Set(assignedPlayerIds), [assignedPlayerIds]);
   const sortedPlayers = useMemo(() => {
@@ -171,6 +176,16 @@ export const PlayerPool = ({
     });
   }, [players, markedSet, assignedSet]);
 
+  const handleToggleMarkWithScroll = (playerId: string) => {
+    const currentScroll = scrollContainerRef.current?.scrollTop ?? 0;
+    onToggleMark(playerId);
+    requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = currentScroll;
+      }
+    });
+  };
+
   return (
     <section
       className="flex h-full flex-col rounded-3xl bg-white/70 p-4 shadow-lg"
@@ -192,7 +207,7 @@ export const PlayerPool = ({
       </header>
       <div className="flex-1 min-h-0">
         <div
-          ref={setNodeRef}
+          ref={setScrollRef}
           className={clsx(
             "grid gap-3 overflow-hidden rounded-2xl border border-dashed border-emerald-200/60 p-3 transition-all",
             collapsed ? "max-h-0 p-0 opacity-0" : "h-full overflow-y-auto",
@@ -219,7 +234,7 @@ export const PlayerPool = ({
                     <DraggablePoolPlayer
                       player={player}
                       marked={marked}
-                      onToggleMark={onToggleMark}
+                      onToggleMark={handleToggleMarkWithScroll}
                       numberLabel={numberLabel}
                       assigned={assigned}
                     />
