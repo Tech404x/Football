@@ -9,6 +9,7 @@ export type TopControlsProps = {
   onAddPlayer: () => void;
   lastSavedMessage?: string;
   isRegenerateDisabled?: boolean;
+  isAutoFillDisabled?: boolean;
 };
 
 const ControlButton = ({
@@ -44,6 +45,7 @@ export const TopControls = ({
   onAddPlayer,
   lastSavedMessage,
   isRegenerateDisabled,
+  isAutoFillDisabled,
 }: TopControlsProps) => {
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-white/80 p-4 shadow">
@@ -54,7 +56,7 @@ export const TopControls = ({
       </div>
       <div className="flex flex-col items-end gap-3">
         <div className="flex flex-wrap justify-end gap-2">
-          <ControlButton label="Auto Fill" onClick={onAutoFill} variant="ghost" />
+          <ControlButton label="Auto Fill" onClick={onAutoFill} variant="ghost" disabled={isAutoFillDisabled} />
           <ControlButton label="Regenerate" onClick={onRegenerate} variant="ghost" disabled={isRegenerateDisabled} />
           <ControlButton label="Add Player" onClick={onAddPlayer} variant="ghost" />
           <ControlButton label="Reset" onClick={onReset} variant="ghost" />

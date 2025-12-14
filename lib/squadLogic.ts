@@ -15,6 +15,99 @@ const LINE_COUNTS: Record<Position, number> = {
 const POSITION_PRIORITY: Position[] = ["DEF", "MID", "ATT"];
 const TEAM_SEQUENCE: TeamId[] = ["team-a", "team-b"];
 
+const buildSymmetricIndexSequence = (count: number): number[] => {
+  if (count <= 0) {
+    return [];
+  }
+  const indexes: number[] = [];
+  if (count % 2 === 1) {
+    const center = Math.floor(count / 2);
+    indexes.push(center);
+    for (let offset = 1; indexes.length < count; offset += 1) {
+      const left = center - offset;
+      const right = center + offset;
+      if (left >= 0) {
+        indexes.push(left);
+      }
+      if (right < count) {
+        indexes.push(right);
+      }
+    }
+  } else {
+    const rightCenter = count / 2;
+    const leftCenter = rightCenter - 1;
+    for (let offset = 0; indexes.length < count; offset += 1) {
+      const left = leftCenter - offset;
+      const right = rightCenter + offset;
+      if (left >= 0) {
+        indexes.push(left);
+      }
+      if (right < count) {
+        indexes.push(right);
+      }
+    }
+  }
+  return indexes;
+};
+
+const getVisualFillOrder = (playersCount: number): number[] => {
+  if (playersCount <= 0) {
+    return [];
+  }
+  const oddOrder = [2, 1, 3, 0, 4];
+  const evenOrder = [1, 3, 0, 4];
+  const order = playersCount % 2 === 1 ? oddOrder : evenOrder;
+  return order.slice(0, Math.min(playersCount, order.length));
+};
+
+const applyVisualSymmetryToAssignments = (
+  assignments: AssignmentMap,
+  slots: SquadSlot[],
+): AssignmentMap => {
+  const grouped: Record<string, SquadSlot[]> = {};
+  slots.forEach((slot) => {
+    const key = `${slot.teamId}-${slot.position}`;
+    if (!grouped[key]) {
+      grouped[key] = [];
+    }
+    grouped[key].push(slot);
+  });
+
+  Object.values(grouped).forEach((groupSlots) => {
+    if (!groupSlots.length) {
+      return;
+    }
+    const sortedSlots = [...groupSlots].sort((a, b) => a.order - b.order);
+    const assignedPlayers = sortedSlots
+      .map((slot) => assignments[slot.id])
+      .filter((playerId): playerId is string => Boolean(playerId));
+    if (!assignedPlayers.length) {
+      return;
+    }
+    const fillOrder = getVisualFillOrder(assignedPlayers.length);
+    sortedSlots.forEach((slot) => {
+      assignments[slot.id] = null;
+    });
+    fillOrder.forEach((slotIndex, idx) => {
+      const playerId = assignedPlayers[idx];
+      if (playerId && sortedSlots[slotIndex]) {
+        assignments[sortedSlots[slotIndex].id] = playerId;
+      }
+    });
+  });
+
+  return assignments;
+};
+
+const orderSlotsForVisualSymmetry = (slots: SquadSlot[]): SquadSlot[] => {
+  if (!slots.length) {
+    return [];
+  }
+  const sortedByOrder = [...slots].sort((a, b) => a.order - b.order);
+  const symmetricOrder = buildSymmetricIndexSequence(sortedByOrder.length);
+  return symmetricOrder.map((index) => sortedByOrder[index]);
+};
+
 const buildTeamSlots = (teamId: TeamId): SquadSlot[] => {
   const slots: SquadSlot[] = [];
   (Object.keys(LINE_COUNTS) as Position[]).forEach((position) => {
@@ -59,7 +152,10 @@ const buildBalancedSlotOrder = (slots: SquadSlot[]): SquadSlot[] => {
 
   Object.values(groupedByPosition).forEach((teamMap) => {
     TEAM_SEQUENCE.forEach((teamId) => {
-      teamMap[teamId]?.sort((a, b) => a.order - b.order);
+      const queue = teamMap[teamId];
+      if (queue) {
+        teamMap[teamId] = orderSlotsForVisualSymmetry(queue);
+      }
     });
   });
 
@@ -91,10 +187,16 @@ const buildBalancedSlotOrder = (slots: SquadSlot[]): SquadSlot[] => {
   return ordered;
 };
 
+type AutoAssignOptions = {
+  allowRebalanceWhenAllAssigned?: boolean;
+};
+
 export const autoAssignPlayers = (
   players: Player[],
   slots: SquadSlot[] = FORMATION_SLOTS,
+  options: AutoAssignOptions = {},
 ): AssignmentMap => {
+  const { allowRebalanceWhenAllAssigned = false } = options;
   const availablePlayers = [...players];
   const used = new Set<string>();
   const assignments = createEmptyAssignments(slots);
@@ -137,46 +239,74 @@ export const autoAssignPlayers = (
   const getDiff = () => Math.abs(counts["team-a"] - counts["team-b"]);
   const totalPlayersAssigned = counts["team-a"] + counts["team-b"];
 
-  // If all players are assigned, don't unassign to balance
-  if (totalPlayersAssigned === players.length) {
-    return assignments;
+  const findAssignedSlot = (teamId: TeamId) => {
+    return [...orderedSlots].reverse().find((slot) => slot.teamId === teamId && assignments[slot.id]);
+  };
+
+  const findEmptySlot = (teamId: TeamId) => {
+    return orderedSlots.find((slot) => slot.teamId === teamId && !assignments[slot.id]);
+  };
+
+  const rebalanceTeamCounts = (fromTeam: TeamId, toTeam: TeamId): boolean => {
+    const slotToAdjust = findAssignedSlot(fromTeam);
+    if (!slotToAdjust) {
+      return false;
+    }
+    const playerId = assignments[slotToAdjust.id];
+    if (!playerId) {
+      return false;
+    }
+
+    if (allowRebalanceWhenAllAssigned) {
+      const emptySlot = findEmptySlot(toTeam);
+      if (emptySlot) {
+        assignments[emptySlot.id] = playerId;
+        assignments[slotToAdjust.id] = null;
+        counts[fromTeam] -= 1;
+        counts[toTeam] += 1;
+        return true;
+      }
+    }
+
+    assignments[slotToAdjust.id] = null;
+    counts[fromTeam] -= 1;
+    return true;
+  };
+
+  // If all players are assigned, don't unassign to balance unless allowed
+  if (totalPlayersAssigned === players.length && !allowRebalanceWhenAllAssigned) {
+    return applyVisualSymmetryToAssignments(assignments, slots);
+  }
+
+  if (getDiff() <= 1) {
+    return applyVisualSymmetryToAssignments(assignments, slots);
   }
 
   // If total players is even, aim for exact split
   if (totalPlayersAssigned % 2 === 0) {
     const targetPerTeam = totalPlayersAssigned / 2;
     while (counts["team-a"] > targetPerTeam) {
-      const slotToClear = [...orderedSlots]
-        .reverse()
-        .find((slot) => slot.teamId === "team-a" && assignments[slot.id]);
-      if (!slotToClear) break;
-      assignments[slotToClear.id] = null;
-      counts["team-a"] -= 1;
+      if (!rebalanceTeamCounts("team-a", "team-b")) {
+        break;
+      }
     }
     while (counts["team-b"] > targetPerTeam) {
-      const slotToClear = [...orderedSlots]
-        .reverse()
-        .find((slot) => slot.teamId === "team-b" && assignments[slot.id]);
-      if (!slotToClear) break;
-      assignments[slotToClear.id] = null;
-      counts["team-b"] -= 1;
+      if (!rebalanceTeamCounts("team-b", "team-a")) {
+        break;
+      }
     }
   } else {
     // If total players is odd, allow 1 player difference
     while (getDiff() > 1) {
       const majority: TeamId = counts["team-a"] > counts["team-b"] ? "team-a" : "team-b";
-      const slotToClear = [...orderedSlots]
-        .reverse()
-        .find((slot) => slot.teamId === majority && assignments[slot.id]);
-      if (!slotToClear) {
+      const minority: TeamId = majority === "team-a" ? "team-b" : "team-a";
+      if (!rebalanceTeamCounts(majority, minority)) {
         break;
       }
-      assignments[slotToClear.id] = null;
-      counts[majority] -= 1;
     }
   }
 
-  return assignments;
+  return applyVisualSymmetryToAssignments(assignments, slots);
 };
 
 export const ensureAssignmentsIntegrity = (

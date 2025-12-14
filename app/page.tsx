@@ -23,6 +23,31 @@ import { loadState } from "@/lib/storage";
 import type { Player } from "@/types/player";
 import type { AssignmentMap, SquadSlot, TeamId } from "@/types/squad";
 
+const mergeAssignmentsPreservingExisting = (
+  current: AssignmentMap,
+  planned: AssignmentMap,
+): AssignmentMap => {
+  const next: AssignmentMap = { ...planned };
+  const plannedPlayerSlots = new Map<string, string>();
+  Object.entries(next).forEach(([slotId, playerId]) => {
+    if (playerId) {
+      plannedPlayerSlots.set(playerId, slotId);
+    }
+  });
+  Object.entries(current).forEach(([slotId, playerId]) => {
+    if (!playerId) {
+      return;
+    }
+    const existingSlotId = plannedPlayerSlots.get(playerId);
+    if (existingSlotId && existingSlotId !== slotId) {
+      next[existingSlotId] = null;
+    }
+    next[slotId] = playerId;
+    plannedPlayerSlots.set(playerId, slotId);
+  });
+  return next;
+};
+
 export default function HomePage() {
   const [players, setPlayers] = useState<Player[]>(mockPlayers);
   const [assignments, setAssignments] = useState<AssignmentMap>(createEmptyAssignments());
@@ -95,6 +120,10 @@ export default function HomePage() {
     () => players.filter((player) => markedPlayerIds.includes(player.id)),
     [players, markedPlayerIds],
   );
+  const hasUnassignedActivePlayers = useMemo(
+    () => markedPlayers.some((player) => !assignedPlayers.has(player.id)),
+    [markedPlayers, assignedPlayers],
+  );
 
   const handleDragStart = (event: DragStartEvent) => {
     const playerId = event.active?.data?.current?.playerId as string | undefined;
@@ -139,15 +168,13 @@ export default function HomePage() {
   };
 
   const handleAutoFill = () => {
-    if (markedPlayers.length === 0) {
+    if (!hasUnassignedActivePlayers) {
       return;
     }
-    // Collect currently assigned players and unassigned marked players
-    const currentAssignedIds = Object.values(assignments).filter(Boolean) as string[];
-    const currentAssignedPlayers = currentAssignedIds.map(id => playersById[id]).filter(Boolean);
-    const unassignedMarkedPlayers = markedPlayers.filter(player => !assignedPlayers.has(player.id));
-    const allToAssign = [...currentAssignedPlayers, ...unassignedMarkedPlayers];
-    setAssignments(autoAssignPlayers(allToAssign));
+    setAssignments((current) => {
+      const planned = autoAssignPlayers(markedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
+      return mergeAssignmentsPreservingExisting(current, planned);
+    });
   };
 
   const handleRegenerate = () => {
@@ -161,7 +188,7 @@ export default function HomePage() {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    setAssignments(autoAssignPlayers(shuffled));
+    setAssignments(autoAssignPlayers(shuffled, undefined, { allowRebalanceWhenAllAssigned: true }));
   };
 
   const handleAddPlayer = (values: AddPlayerValues) => {
@@ -308,6 +335,7 @@ export default function HomePage() {
           onAddPlayer={() => setModalOpen(true)}
           lastSavedMessage={lastSavedMessage}
           isRegenerateDisabled={assignedPlayers.size === 0}
+          isAutoFillDisabled={!hasUnassignedActivePlayers || markedPlayers.length === 0}
         />
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div
