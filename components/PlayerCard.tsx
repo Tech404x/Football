@@ -13,6 +13,7 @@ export type PlayerCardProps = {
   markControl?: ReactNode;
   numberLabel?: string;
   inactive?: boolean;
+  isCustom?: boolean;
 };
 
 export const PlayerCard = ({
@@ -23,6 +24,7 @@ export const PlayerCard = ({
   markControl,
   numberLabel,
   inactive,
+  isCustom,
 }: PlayerCardProps) => {
   const borderClass = inactive ? "border-red-500" : "border-emerald-600";
   const avatarClass = inactive ? "bg-red-300" : "bg-emerald-500";
@@ -35,6 +37,7 @@ export const PlayerCard = ({
         compact ? "py-1" : "py-2.5",
         highlight && "ring-2 ring-emerald-400",
         borderClass,
+        isCustom && "ring-2 ring-sky-300",
       )}
     >
       <div className={clsx("relative h-10 w-10 overflow-hidden rounded-xl", avatarClass)}>

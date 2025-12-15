@@ -19,7 +19,7 @@ import {
   ArrowUturnLeftIcon,
 } from "@heroicons/react/24/solid";
 import { Shirt as ShirtIcon } from "lucide-react";
-import { mockPlayers } from "@/lib/mockPlayers";
+import { mockPlayers, BASE_PLAYER_ID_SET } from "@/lib/mockPlayers";
 import {
   autoAssignPlayers,
   createEmptyAssignments,
@@ -256,8 +256,10 @@ export default function HomePage() {
 
 
   const performReset = () => {
-    const defaultActiveIds = getDefaultActivePlayerIds(players);
-    const nextMarkedPlayers = players.filter((player) => defaultActiveIds.includes(player.id));
+    const basePlayers = [...mockPlayers];
+    setPlayers(basePlayers);
+    const defaultActiveIds = getDefaultActivePlayerIds(basePlayers);
+    const nextMarkedPlayers = basePlayers.filter((player) => defaultActiveIds.includes(player.id));
     setMarkedPlayerIds(defaultActiveIds);
     const shuffledPlayers = shufflePlayers(nextMarkedPlayers);
     const autoAssignments = autoAssignPlayers(shuffledPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
@@ -558,7 +560,12 @@ export default function HomePage() {
           <DragOverlay dropAnimation={null}>
             {draggingPlayer ? (
               <div className="w-32 rounded-3xl bg-emerald-900/70 px-3 py-2">
-                <PlayerBadge player={draggingPlayer} teamId="team-a" alternate={alternateJerseys} />
+                <PlayerBadge
+                  player={draggingPlayer}
+                  teamId="team-a"
+                  alternate={alternateJerseys}
+                  isCustom={!BASE_PLAYER_ID_SET.has(draggingPlayer.id)}
+                />
               </div>
             ) : null}
           </DragOverlay>

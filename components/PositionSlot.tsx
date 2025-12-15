@@ -3,6 +3,7 @@
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/solid";
+import { BASE_PLAYER_ID_SET } from "@/lib/mockPlayers";
 import type { Player, Position } from "@/types/player";
 import type { SquadSlot, TeamId } from "@/types/squad";
 
@@ -28,12 +29,14 @@ export const PlayerBadge = ({
   large,
   alternate,
   mismatchLevel = 0,
+  isCustom,
 }: {
   player: Player;
   teamId: TeamId;
   large?: boolean;
   alternate?: boolean;
   mismatchLevel?: number;
+  isCustom?: boolean;
 }) => {
   const isTeamALight = alternate ? teamId === "team-b" : teamId === "team-a";
   const variant = isTeamALight ? "light" : "dark";
@@ -46,7 +49,12 @@ export const PlayerBadge = ({
         : "border-4 border-transparent";
 
   return (
-    <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+    <div
+      className={clsx(
+        "flex flex-col items-center gap-0.5 sm:gap-1",
+        isCustom && "rounded-3xl border border-sky-300/80 bg-sky-50/40 px-1 py-1",
+      )}
+    >
       <div
         className={clsx(
           "flex items-center justify-center rounded-xl sm:rounded-2xl font-bold uppercase shadow-lg",
@@ -127,6 +135,7 @@ const SlotPlayer = ({
   };
 
   const mismatchLevel = getPositionMismatchLevel(slot.position, player.preferredPosition);
+  const isCustomPlayer = !BASE_PLAYER_ID_SET.has(player.id);
 
   return (
     <div className="relative">
@@ -144,6 +153,7 @@ const SlotPlayer = ({
           large={large}
           alternate={alternate}
           mismatchLevel={mismatchLevel}
+          isCustom={isCustomPlayer}
         />
       </div>
       {showRemoveControl && (

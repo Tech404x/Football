@@ -25,3 +25,5 @@ export const mockPlayers: Player[] = [
   { id: "p22", name: "ص هباني", photo: "/players/placeholder.svg", preferredPosition: "MID" },
   { id: "p23", name: "م خليفة", photo: "/players/placeholder.svg", preferredPosition: "MID" },
 ];
+
+export const BASE_PLAYER_ID_SET = new Set(mockPlayers.map((player) => player.id));

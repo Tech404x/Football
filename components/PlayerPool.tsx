@@ -4,6 +4,7 @@ import { useDroppable } from "@dnd-kit/core";
 import clsx from "clsx";
 import { useMemo, useRef, type MouseEvent } from "react";
 import type { Player } from "@/types/player";
+import { BASE_PLAYER_ID_SET } from "@/lib/mockPlayers";
 import { PlayerCard } from "./PlayerCard";
 
 export const PLAYER_POOL_DROP_ID = "player-pool";
@@ -35,6 +36,7 @@ const PlayerPoolCard = ({
         numberLabel={numberLabel}
         highlight={!inactive}
         inactive={inactive}
+        isCustom={!BASE_PLAYER_ID_SET.has(player.id)}
         markControl={
           <button
             onMouseDown={(event) => event.stopPropagation()}
