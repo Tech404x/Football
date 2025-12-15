@@ -2,6 +2,7 @@
 
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
+import { ArrowsRightLeftIcon } from "@heroicons/react/24/solid";
 import type { Player, Position } from "@/types/player";
 import type { SquadSlot, TeamId } from "@/types/squad";
 
@@ -177,6 +178,8 @@ export type PositionSlotProps = {
   onRemovePlayer?: (playerId: string) => void;
   large?: boolean;
   alternate?: boolean;
+  isOriginSlot?: boolean;
+  showSwapPreview?: boolean;
 };
 
 export const PositionSlot = ({
@@ -189,6 +192,8 @@ export const PositionSlot = ({
   onRemovePlayer,
   large,
   alternate,
+  isOriginSlot,
+  showSwapPreview,
 }: PositionSlotProps) => {
   const { isOver, setNodeRef } = useDroppable({
     id: slot.id,
@@ -196,16 +201,25 @@ export const PositionSlot = ({
   });
   const isEmpty = !player;
 
+  const overHighlightClass = isOver
+    ? player
+      ? "bg-yellow-400/10 ring-2 ring-yellow-300"
+      : "bg-emerald-400/10 ring-2 ring-emerald-200"
+    : undefined;
+  const originHighlightClass = isOriginSlot ? "ring-2 ring-yellow-400 bg-yellow-100/10" : undefined;
+
   return (
     <div
       ref={setNodeRef}
       className={clsx(
         "flex min-h-[60px] sm:min-h-[90px] w-full items-center justify-center rounded-2xl sm:rounded-3xl p-2 sm:p-3 transition",
-        isOver && "bg-emerald-400/10 ring-2 ring-emerald-200",
+        originHighlightClass,
+        overHighlightClass,
         isEmpty && !isOver && "opacity-0",
       )}
     >
       {player ? (
+        <div className="relative">
           <SlotPlayer
             player={player}
             slot={slot}
@@ -217,6 +231,21 @@ export const PositionSlot = ({
             large={large}
             alternate={alternate}
           />
+          {showSwapPreview && isOver && player && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="absolute -left-8 rounded-full bg-yellow-300/95 p-2 text-yellow-900 shadow-lg ring-2 ring-yellow-400">
+                <ArrowsRightLeftIcon className="h-5 w-5 animate-pulse" />
+              </div>
+            </div>
+          )}
+          {showSwapPreview && isOriginSlot && player && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="absolute -right-8 rounded-full bg-yellow-300/95 p-2 text-yellow-900 shadow-lg ring-2 ring-yellow-400">
+                <ArrowsRightLeftIcon className="h-5 w-5 animate-pulse" />
+              </div>
+            </div>
+          )}
+        </div>
       ) : null}
     </div>
   );

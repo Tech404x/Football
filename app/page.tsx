@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { DndContext, DragOverlay, PointerSensor, type DragEndEvent, type DragStartEvent, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragOverlay, PointerSensor, type DragEndEvent, type DragStartEvent, type DragOverEvent, useSensor, useSensors } from "@dnd-kit/core";
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { nanoid } from "nanoid";
@@ -28,7 +28,7 @@ import {
   swapPlayerIntoSlot,
 } from "@/lib/squadLogic";
 import { FORMATION_SLOTS } from "@/lib/squadLogic";
-import { loadState } from "@/lib/storage";
+import { loadState, saveState } from "@/lib/storage";
 import type { Player } from "@/types/player";
 import type { AssignmentMap, SquadSlot, TeamId } from "@/types/squad";
 
@@ -97,6 +97,9 @@ export default function HomePage() {
   const [lastSavedMessage, setLastSavedMessage] = useState<string>();
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [draggingPlayerId, setDraggingPlayerId] = useState<string>();
+  const [dragOriginSlotId, setDragOriginSlotId] = useState<string>();
+  const [swapPreviewActive, setSwapPreviewActive] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [stateReady, setStateReady] = useState(false);
   const [absentMode, setAbsentMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -121,7 +124,17 @@ export default function HomePage() {
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Removed auto-save to local storage
+  useEffect(() => {
+    if (!stateReady) {
+      return;
+    }
+    saveState({
+      players,
+      assignments,
+      showPool,
+      markedPlayerIds,
+    });
+  }, [players, assignments, showPool, markedPlayerIds, stateReady]);
 
   useEffect(() => {
     if (!lastSavedMessage) {
@@ -179,6 +192,9 @@ export default function HomePage() {
       return;
     }
     setDraggingPlayerId(playerId);
+    const originEntry = Object.entries(assignments).find(([, assigned]) => assigned === playerId);
+    setDragOriginSlotId(originEntry?.[0]);
+    setSwapPreviewActive(false);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -203,20 +219,45 @@ export default function HomePage() {
       return current;
     });
     setDraggingPlayerId(undefined);
+    setDragOriginSlotId(undefined);
+    setSwapPreviewActive(false);
   };
 
   const handleDragCancel = () => {
     setDraggingPlayerId(undefined);
+    setDragOriginSlotId(undefined);
+    setSwapPreviewActive(false);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const playerId = event.active?.data?.current?.playerId as string | undefined;
+    if (!playerId) {
+      setSwapPreviewActive(false);
+      return;
+    }
+    const overId = event.over?.id;
+    if (typeof overId === "string" && overId !== PLAYER_POOL_DROP_ID) {
+      if (assignments[overId] && overId !== dragOriginSlotId) {
+        setSwapPreviewActive(true);
+        return;
+      }
+    }
+    setSwapPreviewActive(false);
   };
 
 
-  const handleReset = () => {
+  const performReset = () => {
     const defaultActiveIds = getDefaultActivePlayerIds(players);
     const nextMarkedPlayers = players.filter((player) => defaultActiveIds.includes(player.id));
     setMarkedPlayerIds(defaultActiveIds);
     const autoAssignments = autoAssignPlayers(nextMarkedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
     setAssignments(autoAssignments);
     setLastSavedMessage("Squad reset and auto-filled");
+    setResetConfirmOpen(false);
+  };
+
+  const handleResetRequest = () => {
+    setResetConfirmOpen(true);
   };
 
 
@@ -341,7 +382,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-100 px-4 py-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 pb-16">
         <TopControls
-          onReset={handleReset}
+          onReset={handleResetRequest}
           onRegenerate={handleRegenerate}
           onAddPlayer={() => setModalOpen(true)}
           onTogglePlayerPool={() => setShowPool(true)}
@@ -353,7 +394,7 @@ export default function HomePage() {
           jerseysSwapped={alternateJerseys}
           isRegenerateDisabled={assignedPlayers.size === 0}
         />
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className="relative w-full" ref={boardRef} data-export-board>
             {isFullscreen && (
               <div className="sticky top-0 z-30 bg-emerald-900/90 px-4 py-3 shadow-lg">
@@ -394,7 +435,7 @@ export default function HomePage() {
                       <ArrowPathIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                     <button
-                      onClick={handleReset}
+                      onClick={handleResetRequest}
                       aria-label="Reset"
                       className="text-white transition hover:text-emerald-200"
                     >
@@ -439,7 +480,33 @@ export default function HomePage() {
               showAbsents={absentMode}
               isFullscreen={isFullscreen}
               alternateJerseys={alternateJerseys}
+              dragOriginSlotId={dragOriginSlotId}
+              showSwapPreview={swapPreviewActive}
             />
+            {resetConfirmOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
+                <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
+                  <h2 className="mb-4 text-3xl font-extrabold text-emerald-900">Reset Squad?</h2>
+                  <p className="mb-6 text-lg font-semibold text-emerald-800">
+                    You will lose the current formation and the board will be auto-filled again.
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                    <button
+                      onClick={() => setResetConfirmOpen(false)}
+                      className="rounded-full border border-emerald-300 px-6 py-3 text-emerald-700 font-semibold hover:bg-emerald-50"
+                    >
+                      Keep Current Formation
+                    </button>
+                    <button
+                      onClick={performReset}
+                      className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-emerald-500"
+                    >
+                      Yes, Reset Squad
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {isFullscreen && (
                 <div
                   className={clsx(
@@ -522,6 +589,30 @@ export default function HomePage() {
       )}
       {modalOpen && !isFullscreen && (
         <AddPlayerModal onClose={() => setModalOpen(false)} onSubmit={handleAddPlayer} />
+      )}
+      {resetConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
+            <h2 className="mb-4 text-3xl font-extrabold text-emerald-900">Reset Squad?</h2>
+            <p className="mb-6 text-lg font-semibold text-emerald-800">
+              You will lose the current formation and the board will be auto-filled again.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                onClick={() => setResetConfirmOpen(false)}
+                className="rounded-full border border-emerald-300 px-6 py-3 text-emerald-700 font-semibold hover:bg-emerald-50"
+              >
+                Keep Current Formation
+              </button>
+              <button
+                onClick={performReset}
+                className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-emerald-500"
+              >
+                Yes, Reset Squad
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

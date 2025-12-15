@@ -27,6 +27,8 @@ export type SquadBoardProps = {
   showAbsents?: boolean;
   isFullscreen?: boolean;
   alternateJerseys?: boolean;
+  dragOriginSlotId?: string;
+  showSwapPreview?: boolean;
 };
 
 export const SquadBoard = ({
@@ -38,6 +40,8 @@ export const SquadBoard = ({
   showAbsents,
   isFullscreen,
   alternateJerseys,
+  dragOriginSlotId,
+  showSwapPreview,
 }: SquadBoardProps) => {
   const [activeMenuPlayerId, setActiveMenuPlayerId] = useState<string | null>(null);
   const slotMap = useMemo(() => {
@@ -137,6 +141,8 @@ export const SquadBoard = ({
                                 onRemovePlayer={onMissPlayer}
                                 large={isFullscreen}
                                 alternate={alternateJerseys}
+                                isOriginSlot={slot.id === dragOriginSlotId}
+                                showSwapPreview={showSwapPreview}
                               />
                             );
                           })}
@@ -174,6 +180,8 @@ export const SquadBoard = ({
                                 onRemovePlayer={onMissPlayer}
                                 large={isFullscreen}
                                 alternate={alternateJerseys}
+                                isOriginSlot={slot.id === dragOriginSlotId}
+                                showSwapPreview={showSwapPreview}
                               />
                             );
                           })}
