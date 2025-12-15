@@ -217,8 +217,9 @@ export const autoAssignPlayers = (
     used.add(player.id);
   };
 
-  orderedSlots.forEach((slot) => claimPlayer(slot, (player) => player.preferredPosition === slot.position));
-  orderedSlots.forEach((slot) => claimPlayer(slot, () => true));
+  orderedSlots.forEach((slot) => {
+    claimPlayer(slot, (player) => player.preferredPosition === slot.position);
+  });
 
   const counts: Record<TeamId, number> = { "team-a": 0, "team-b": 0 };
   const slotMap = slots.reduce<Record<string, SquadSlot>>((acc, slot) => {
@@ -243,8 +244,16 @@ export const autoAssignPlayers = (
     return [...orderedSlots].reverse().find((slot) => slot.teamId === teamId && assignments[slot.id]);
   };
 
-  const findEmptySlot = (teamId: TeamId) => {
-    return orderedSlots.find((slot) => slot.teamId === teamId && !assignments[slot.id]);
+  const findEmptySlot = (teamId: TeamId, position?: Position) => {
+    return orderedSlots.find((slot) => {
+      if (slot.teamId !== teamId || assignments[slot.id]) {
+        return false;
+      }
+      if (position && slot.position !== position) {
+        return false;
+      }
+      return true;
+    });
   };
 
   const rebalanceTeamCounts = (fromTeam: TeamId, toTeam: TeamId): boolean => {
@@ -258,7 +267,7 @@ export const autoAssignPlayers = (
     }
 
     if (allowRebalanceWhenAllAssigned) {
-      const emptySlot = findEmptySlot(toTeam);
+      const emptySlot = findEmptySlot(toTeam, slotToAdjust.position);
       if (emptySlot) {
         assignments[emptySlot.id] = playerId;
         assignments[slotToAdjust.id] = null;
