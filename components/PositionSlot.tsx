@@ -2,7 +2,7 @@
 
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
-import type { Player } from "@/types/player";
+import type { Player, Position } from "@/types/player";
 import type { SquadSlot, TeamId } from "@/types/squad";
 
 const jerseyClasses = {
@@ -10,20 +10,39 @@ const jerseyClasses = {
   dark: "bg-slate-900 text-white",
 };
 
+const POSITION_SEQUENCE: Position[] = ["DEF", "MID", "ATT"];
+
+const getPositionMismatchLevel = (slotPosition: Position, playerPosition: Position): number => {
+  const slotIndex = POSITION_SEQUENCE.indexOf(slotPosition);
+  const playerIndex = POSITION_SEQUENCE.indexOf(playerPosition);
+  if (slotIndex === -1 || playerIndex === -1) {
+    return 0;
+  }
+  return Math.abs(slotIndex - playerIndex);
+};
+
 export const PlayerBadge = ({
   player,
   teamId,
   large,
   alternate,
+  mismatchLevel = 0,
 }: {
   player: Player;
   teamId: TeamId;
   large?: boolean;
   alternate?: boolean;
+  mismatchLevel?: number;
 }) => {
   const isTeamALight = alternate ? teamId === "team-b" : teamId === "team-a";
   const variant = isTeamALight ? "light" : "dark";
-  const firstName = player.name.trim().split(/\s+/)[0] ?? player.name;
+  const jerseyClass = jerseyClasses[variant];
+  const mismatchBorderClasses =
+    mismatchLevel >= 2
+      ? "border-4 border-red-500 ring-4 ring-red-400/80 ring-offset-2 ring-offset-red-200/50"
+      : mismatchLevel === 1
+        ? "border-4 border-yellow-400 ring-4 ring-yellow-300/80 ring-offset-2 ring-offset-yellow-100/70"
+        : "border-4 border-transparent";
 
   return (
     <div className="flex flex-col items-center gap-0.5 sm:gap-1">
@@ -33,7 +52,8 @@ export const PlayerBadge = ({
           large
             ? "h-9 w-9 sm:h-14 sm:w-14 text-[10px] sm:text-sm"
             : "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
-          jerseyClasses[variant],
+          jerseyClass,
+          mismatchBorderClasses,
         )}
       >
         {player.preferredPosition}
@@ -85,11 +105,6 @@ const SlotPlayer = ({
 
   const showMenu = activeMenuPlayerId === player.id;
 
-  const handleClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    setActiveMenuPlayerId(showMenu ? null : player.id);
-  };
-
   const handleMiss = () => {
     onMissPlayer(player.id);
     setActiveMenuPlayerId(null);
@@ -101,6 +116,17 @@ const SlotPlayer = ({
     setActiveMenuPlayerId(null);
   };
 
+  const handleClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (showRemoveControl) {
+      handleRemoveClick(event);
+      return;
+    }
+    setActiveMenuPlayerId(showMenu ? null : player.id);
+  };
+
+  const mismatchLevel = getPositionMismatchLevel(slot.position, player.preferredPosition);
+
   return (
     <div className="relative">
       <div
@@ -111,7 +137,13 @@ const SlotPlayer = ({
         className={clsx("cursor-grab touch-none", isDragging && "opacity-80")}
         onClick={handleClick}
       >
-        <PlayerBadge player={player} teamId={slot.teamId} large={large} alternate={alternate} />
+        <PlayerBadge
+          player={player}
+          teamId={slot.teamId}
+          large={large}
+          alternate={alternate}
+          mismatchLevel={mismatchLevel}
+        />
       </div>
       {showRemoveControl && (
         <button

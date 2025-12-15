@@ -26,7 +26,6 @@ export type TopControlsProps = {
   isFullscreen?: boolean;
   onToggleJerseys?: () => void;
   jerseysSwapped?: boolean;
-  lastSavedMessage?: string;
   isRegenerateDisabled?: boolean;
 };
 
@@ -72,17 +71,25 @@ export const TopControls = ({
   isFullscreen,
   onToggleJerseys,
   jerseysSwapped,
-  lastSavedMessage,
   isRegenerateDisabled,
 }: TopControlsProps) => {
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-white/80 p-4 shadow">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-slate-900 mx-auto text-center">Squad Selector</h1>
-        {lastSavedMessage && <p className="text-xs font-semibold text-emerald-600">{lastSavedMessage}</p>}
       </div>
       <div className="flex flex-col items-end gap-3">
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2 items-center">
+          {onToggleFullscreen && (
+            <div className="mr-auto">
+              <ControlButton
+                icon={isFullscreen ? <ArrowsPointingInIcon className="h-5 w-5" /> : <ArrowsPointingOutIcon className="h-5 w-5" />}
+                srLabel={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                onClick={onToggleFullscreen}
+                variant={isFullscreen ? "primary" : "ghost"}
+              />
+            </div>
+          )}
           {onTogglePlayerPool && (
             <ControlButton
               icon={<UserGroupIcon className="h-5 w-5" />}
@@ -105,14 +112,6 @@ export const TopControls = ({
               srLabel="Swap Shirts"
               onClick={onToggleJerseys}
               variant={jerseysSwapped ? "primary" : "ghost"}
-            />
-          )}
-          {onToggleFullscreen && (
-            <ControlButton
-              icon={isFullscreen ? <ArrowsPointingInIcon className="h-5 w-5" /> : <ArrowsPointingOutIcon className="h-5 w-5" />}
-              srLabel={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              onClick={onToggleFullscreen}
-              variant={isFullscreen ? "primary" : "ghost"}
             />
           )}
           <ControlButton

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { DndContext, DragOverlay, PointerSensor, type DragEndEvent, type DragStartEvent, useSensor, useSensors } from "@dnd-kit/core";
 import clsx from "clsx";
@@ -16,6 +16,7 @@ import {
   PlusIcon,
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
+  ArrowUturnLeftIcon,
 } from "@heroicons/react/24/solid";
 import { Shirt as ShirtIcon } from "lucide-react";
 import { mockPlayers } from "@/lib/mockPlayers";
@@ -35,6 +36,14 @@ const FORMATION_SLOT_MAP = FORMATION_SLOTS.reduce<Record<string, SquadSlot>>((ac
   acc[slot.id] = slot;
   return acc;
 }, {});
+
+const DEFAULT_INACTIVE_PLAYER_IDS = ["p22", "p13", "p11", "p16", "p9"] as const;
+
+const getDefaultActivePlayerIds = (players: Player[]): string[] => {
+  return players.map((player) => player.id).filter((id) => {
+    return !(DEFAULT_INACTIVE_PLAYER_IDS as readonly string[]).includes(id);
+  });
+};
 
 const assignPlayerToBoard = (
   current: AssignmentMap,
@@ -102,14 +111,10 @@ export default function HomePage() {
       setShowPool(stored.showPool);
       setMarkedPlayerIds(stored.markedPlayerIds ?? []);
     } else {
-      // By default, mark all players as active except the specified inactive players
-      const inactivePlayerIds = ["p22", "p13", "p11", "p16","p9"]; // صديق هباني, امين مبارك, معاذ الأزرق
-      const allPlayerIds = mockPlayers.map(player => player.id);
-      const activePlayerIds = allPlayerIds.filter(id => !inactivePlayerIds.includes(id));
+      const activePlayerIds = getDefaultActivePlayerIds(mockPlayers);
       setMarkedPlayerIds(activePlayerIds);
-      // Auto-fill by default
-      const markedPlayers = mockPlayers.filter(player => activePlayerIds.includes(player.id));
-      const autoAssignments = autoAssignPlayers(markedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
+      const initialMarkedPlayers = mockPlayers.filter((player) => activePlayerIds.includes(player.id));
+      const autoAssignments = autoAssignPlayers(initialMarkedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
       setAssignments(autoAssignments);
     }
     setStateReady(true);
@@ -206,8 +211,12 @@ export default function HomePage() {
 
 
   const handleReset = () => {
-    setAssignments(createEmptyAssignments());
-    setLastSavedMessage("All squad slots cleared");
+    const defaultActiveIds = getDefaultActivePlayerIds(players);
+    const nextMarkedPlayers = players.filter((player) => defaultActiveIds.includes(player.id));
+    setMarkedPlayerIds(defaultActiveIds);
+    const autoAssignments = autoAssignPlayers(nextMarkedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
+    setAssignments(autoAssignments);
+    setLastSavedMessage("Squad reset and auto-filled");
   };
 
 
@@ -342,7 +351,6 @@ export default function HomePage() {
           isFullscreen={isFullscreen}
           onToggleJerseys={() => setAlternateJerseys((prev) => !prev)}
           jerseysSwapped={alternateJerseys}
-          lastSavedMessage={lastSavedMessage}
           isRegenerateDisabled={assignedPlayers.size === 0}
         />
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
@@ -384,6 +392,13 @@ export default function HomePage() {
                       className="text-white transition hover:text-emerald-200"
                     >
                       <ArrowPathIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={handleReset}
+                      aria-label="Reset"
+                      className="text-white transition hover:text-emerald-200"
+                    >
+                      <ArrowUturnLeftIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => setModalOpen(true)}
