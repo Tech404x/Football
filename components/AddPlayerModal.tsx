@@ -6,7 +6,6 @@ import { POSITIONS, type Position } from "@/types/player";
 export type AddPlayerValues = {
   name: string;
   preferredPosition: Position;
-  photo?: string;
 };
 
 export type AddPlayerModalProps = {
@@ -17,7 +16,6 @@ export type AddPlayerModalProps = {
 const defaultForm: AddPlayerValues = {
   name: "",
   preferredPosition: "MID",
-  photo: "",
 };
 
 export const AddPlayerModal = ({ onClose, onSubmit }: AddPlayerModalProps) => {
@@ -76,16 +74,6 @@ export const AddPlayerModal = ({ onClose, onSubmit }: AddPlayerModalProps) => {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
-            Photo URL (optional)
-            <input
-              type="text"
-              value={form.photo}
-              onChange={(event) => setForm((prev) => ({ ...prev, photo: event.target.value }))}
-              className="rounded-2xl border border-slate-200 px-4 py-2.5 text-base"
-              placeholder="https://"
-            />
           </label>
           <button
             type="submit"

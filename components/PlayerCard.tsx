@@ -11,8 +11,8 @@ export type PlayerCardProps = {
   highlight?: boolean;
   note?: string;
   markControl?: ReactNode;
-  dimmed?: boolean;
   numberLabel?: string;
+  inactive?: boolean;
 };
 
 export const PlayerCard = ({
@@ -21,21 +21,30 @@ export const PlayerCard = ({
   highlight,
   note,
   markControl,
-  dimmed,
   numberLabel,
+  inactive,
 }: PlayerCardProps) => {
+  const borderClass = inactive ? "border-red-500" : "border-emerald-600";
+  const avatarClass = inactive ? "bg-red-300" : "bg-emerald-500";
+  const badgeClass = inactive ? "bg-red-600" : "bg-emerald-600";
+
   return (
     <div
       className={clsx(
-        "flex w-full items-center gap-3 rounded-2xl border bg-white/80 px-3 py-2 shadow-sm backdrop-blur transition",
+        "flex w-full items-center gap-3 rounded-2xl border bg-white px-3 py-2 shadow-md transition",
         compact ? "py-1" : "py-2.5",
         highlight && "ring-2 ring-emerald-400",
-        dimmed ? "border-red-300 opacity-60" : "border-emerald-400/70",
+        borderClass,
       )}
     >
-      <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-emerald-200">
+      <div className={clsx("relative h-10 w-10 overflow-hidden rounded-xl", avatarClass)}>
         {numberLabel && (
-          <span className="absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full bg-emerald-600 px-2 text-[10px] font-bold text-white">
+          <span
+            className={clsx(
+              "absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full px-2 text-[10px] font-bold text-white",
+              badgeClass,
+            )}
+          >
             {numberLabel}
           </span>
         )}

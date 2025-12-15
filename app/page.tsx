@@ -2,7 +2,6 @@
 
 import { DndContext, DragOverlay, PointerSensor, type DragEndEvent, type DragStartEvent, useSensor, useSensors } from "@dnd-kit/core";
 import clsx from "clsx";
-import html2canvas from "html2canvas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import { AddPlayerModal, type AddPlayerValues } from "@/components/AddPlayerModal";
@@ -23,44 +22,69 @@ import { loadState } from "@/lib/storage";
 import type { Player } from "@/types/player";
 import type { AssignmentMap, SquadSlot, TeamId } from "@/types/squad";
 
-const mergeAssignmentsPreservingExisting = (
+const FORMATION_SLOT_MAP = FORMATION_SLOTS.reduce<Record<string, SquadSlot>>((acc, slot) => {
+  acc[slot.id] = slot;
+  return acc;
+}, {});
+
+const assignPlayerToBoard = (
   current: AssignmentMap,
-  planned: AssignmentMap,
-): AssignmentMap => {
-  const next: AssignmentMap = { ...planned };
-  const plannedPlayerSlots = new Map<string, string>();
+  player: Player,
+): { next: AssignmentMap; assignedSlotId?: string } => {
+  const next: AssignmentMap = removePlayerFromAssignments(player.id, current);
+  const availableSlots = FORMATION_SLOTS.filter((slot) => !next[slot.id]);
+  if (!availableSlots.length) {
+    return { next };
+  }
+
+  const teamCounts: Record<TeamId, number> = { "team-a": 0, "team-b": 0 };
   Object.entries(next).forEach(([slotId, playerId]) => {
-    if (playerId) {
-      plannedPlayerSlots.set(playerId, slotId);
-    }
-  });
-  Object.entries(current).forEach(([slotId, playerId]) => {
     if (!playerId) {
       return;
     }
-    const existingSlotId = plannedPlayerSlots.get(playerId);
-    if (existingSlotId && existingSlotId !== slotId) {
-      next[existingSlotId] = null;
+    const slot = FORMATION_SLOT_MAP[slotId];
+    if (slot) {
+      teamCounts[slot.teamId] += 1;
     }
-    next[slotId] = playerId;
-    plannedPlayerSlots.set(playerId, slotId);
   });
-  return next;
+
+  const pickBalancedSlot = (slots: SquadSlot[]) => {
+    if (!slots.length) {
+      return undefined;
+    }
+    return [...slots].sort((a, b) => {
+      const teamDiff = teamCounts[a.teamId] - teamCounts[b.teamId];
+      if (teamDiff !== 0) {
+        return teamDiff;
+      }
+      return a.order - b.order;
+    })[0];
+  };
+
+  const preferredSlots = availableSlots.filter((slot) => slot.position === player.preferredPosition);
+  const targetSlot = pickBalancedSlot(preferredSlots) ?? pickBalancedSlot(availableSlots);
+  if (!targetSlot) {
+    return { next };
+  }
+  next[targetSlot.id] = player.id;
+  return { next, assignedSlotId: targetSlot.id };
 };
 
 export default function HomePage() {
   const [players, setPlayers] = useState<Player[]>(mockPlayers);
   const [assignments, setAssignments] = useState<AssignmentMap>(createEmptyAssignments());
-  const [showPool, setShowPool] = useState(true);
+  const [showPool, setShowPool] = useState(false);
   const [markedPlayerIds, setMarkedPlayerIds] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [lastSavedMessage, setLastSavedMessage] = useState<string>();
   const boardRef = useRef<HTMLDivElement | null>(null);
-  const [boardHeight, setBoardHeight] = useState<number>();
   const [draggingPlayerId, setDraggingPlayerId] = useState<string>();
-  const [exporting, setExporting] = useState(false);
   const [stateReady, setStateReady] = useState(false);
+  const [absentMode, setAbsentMode] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [alternateJerseys, setAlternateJerseys] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const stored = loadState();
     if (stored) {
@@ -74,9 +98,14 @@ export default function HomePage() {
       const allPlayerIds = mockPlayers.map(player => player.id);
       const activePlayerIds = allPlayerIds.filter(id => !inactivePlayerIds.includes(id));
       setMarkedPlayerIds(activePlayerIds);
+      // Auto-fill by default
+      const markedPlayers = mockPlayers.filter(player => activePlayerIds.includes(player.id));
+      const autoAssignments = autoAssignPlayers(markedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
+      setAssignments(autoAssignments);
     }
     setStateReady(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Removed auto-save to local storage
 
@@ -89,18 +118,14 @@ export default function HomePage() {
   }, [lastSavedMessage]);
 
   useEffect(() => {
-    if (!boardRef.current || typeof window === "undefined") {
+    if (typeof document === "undefined") {
       return;
     }
-    const element = boardRef.current;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setBoardHeight(entry.contentRect.height);
-      }
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
+    const handleChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleChange);
+    return () => document.removeEventListener("fullscreenchange", handleChange);
   }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -119,10 +144,6 @@ export default function HomePage() {
   const markedPlayers = useMemo(
     () => players.filter((player) => markedPlayerIds.includes(player.id)),
     [players, markedPlayerIds],
-  );
-  const hasUnassignedActivePlayers = useMemo(
-    () => markedPlayers.some((player) => !assignedPlayers.has(player.id)),
-    [markedPlayers, assignedPlayers],
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -167,15 +188,6 @@ export default function HomePage() {
     setLastSavedMessage("All squad slots cleared");
   };
 
-  const handleAutoFill = () => {
-    if (!hasUnassignedActivePlayers) {
-      return;
-    }
-    setAssignments((current) => {
-      const planned = autoAssignPlayers(markedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
-      return mergeAssignmentsPreservingExisting(current, planned);
-    });
-  };
 
   const handleRegenerate = () => {
     const assignedPlayerIds = Object.values(assignments).filter(Boolean) as string[];
@@ -196,17 +208,55 @@ export default function HomePage() {
       id: nanoid(6),
       name: values.name,
       preferredPosition: values.preferredPosition,
-      photo: values.photo?.trim() ? values.photo.trim() : "/players/placeholder.svg",
+      photo: "/players/placeholder.svg",
     };
-    setPlayers((prev) => [...prev, newPlayer]);
+    setPlayers((prevPlayers) => [...prevPlayers, newPlayer]);
+    setMarkedPlayerIds((prevMarked) => {
+      if (prevMarked.includes(newPlayer.id)) {
+        return prevMarked;
+      }
+      return [...prevMarked, newPlayer.id];
+    });
+
+    let placedOnBoard = false;
+    setAssignments((current) => {
+      const { next, assignedSlotId } = assignPlayerToBoard(current, newPlayer);
+      placedOnBoard = Boolean(assignedSlotId);
+      return next;
+    });
+
     setModalOpen(false);
-    setLastSavedMessage(`${values.name} added to the pool`);
+    setLastSavedMessage(
+      placedOnBoard ? `${values.name} added to the squad board` : `${values.name} added to the pool`,
+    );
+  };
+
+  const handleToggleFullscreen = async () => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (boardRef.current && boardRef.current.requestFullscreen) {
+        await boardRef.current.requestFullscreen();
+      }
+    } catch (error) {
+      console.error("Failed to toggle fullscreen", error);
+    }
   };
 
   const handleToggleMark = (playerId: string) => {
+    const player = playersById[playerId];
     setMarkedPlayerIds((prev) => {
       if (prev.includes(playerId)) {
+        setAssignments((current) => removePlayerFromAssignments(playerId, current));
         return prev.filter((id) => id !== playerId);
+      }
+      if (player) {
+        setAssignments((current) => assignPlayerToBoard(current, player).next);
       }
       return [...prev, playerId];
     });
@@ -214,7 +264,7 @@ export default function HomePage() {
 
   const handleMissPlayer = (playerId: string) => {
     setAssignments((current) => {
-      let next = removePlayerFromAssignments(playerId, current);
+      const next = removePlayerFromAssignments(playerId, current);
       // Balance teams by moving a player if diff > 1
       const assignedIds = Object.values(next).filter(Boolean) as string[];
       if (assignedIds.length === 0) return next;
@@ -256,141 +306,160 @@ export default function HomePage() {
     setMarkedPlayerIds((prev) => prev.filter((id) => id !== playerId));
   };
 
-  const exportBoardImage = async () => {
-    const boardElement = boardRef.current;
-    if (!boardElement) {
-      return null;
-    }
-    boardElement.dataset.exporting = "true";
-    try {
-      const canvas = await html2canvas(boardElement, {
-        backgroundColor: "#064e3b",
-        scale: 2,
-      });
-      return new Promise<{ blob: Blob; dataUrl: string } | null>((resolve) => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            resolve(null);
-            return;
-          }
-          resolve({ blob, dataUrl: canvas.toDataURL("image/png") });
-        }, "image/png");
-      });
-    } finally {
-      delete boardElement.dataset.exporting;
-    }
-  };
-
-  const handleDownloadBoard = async () => {
-    if (exporting) {
-      return;
-    }
-    setExporting(true);
-    try {
-      const result = await exportBoardImage();
-      if (!result) {
-        return;
-      }
-      const link = document.createElement("a");
-      link.href = result.dataUrl;
-      link.download = `squad-${new Date().toISOString()}.png`;
-      link.click();
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleShareBoard = async () => {
-    if (exporting) {
-      return;
-    }
-    if (typeof navigator === "undefined" || typeof navigator.share !== "function") {
-      await handleDownloadBoard();
-      return;
-    }
-    setExporting(true);
-    try {
-      const result = await exportBoardImage();
-      if (!result) {
-        return;
-      }
-      const file = new File([result.blob], "squad.png", { type: "image/png" });
-      if (navigator.canShare && !navigator.canShare({ files: [file] })) {
-        await handleDownloadBoard();
-        return;
-      }
-      await navigator.share({ files: [file], title: "Squad Lineup", text: "تشكيلة الفريق" });
-    } finally {
-      setExporting(false);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-100 px-4 py-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 pb-16">
         <TopControls
           onReset={handleReset}
-          onAutoFill={handleAutoFill}
           onRegenerate={handleRegenerate}
           onAddPlayer={() => setModalOpen(true)}
+          onTogglePlayerPool={() => setShowPool(true)}
+          onToggleAbsents={() => setAbsentMode((prev) => !prev)}
+          absentsActive={absentMode}
+          onToggleFullscreen={handleToggleFullscreen}
+          isFullscreen={isFullscreen}
+          onToggleJerseys={() => setAlternateJerseys((prev) => !prev)}
+          jerseysSwapped={alternateJerseys}
           lastSavedMessage={lastSavedMessage}
           isRegenerateDisabled={assignedPlayers.size === 0}
-          isAutoFillDisabled={!hasUnassignedActivePlayers || markedPlayers.length === 0}
         />
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-          <div
-            className={clsx(
-              "grid gap-6 grid-cols-1 items-stretch",
-              showPool
-                ? "lg:grid-cols-[minmax(0,0.8fr)_minmax(0,0.45fr)]"
-                : "lg:grid-cols-[minmax(0,0.8fr)_minmax(0,0.2fr)]",
+          <div className="relative w-full" ref={boardRef} data-export-board>
+            {isFullscreen && (
+              <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-2 bg-gradient-to-b from-emerald-900/80 to-transparent px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setShowPool(true)}
+                    className="rounded-2xl bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-700 shadow hover:bg-white"
+                  >
+                    Player Pool
+                  </button>
+                  <button
+                    onClick={() => setAbsentMode((prev) => !prev)}
+                    className={clsx(
+                      "rounded-2xl px-3 py-1 text-xs font-semibold shadow",
+                      absentMode ? "bg-red-600 text-white" : "bg-white/80 text-emerald-700 hover:bg-white",
+                    )}
+                  >
+                    {absentMode ? "Absents On" : "Absents"}
+                  </button>
+                  <button
+                    onClick={() => setAlternateJerseys((prev) => !prev)}
+                    className={clsx(
+                      "rounded-2xl px-3 py-1 text-xs font-semibold shadow",
+                      alternateJerseys
+                        ? "bg-emerald-700 text-white"
+                        : "bg-white/80 text-emerald-700 hover:bg-white",
+                    )}
+                  >
+                    Shirts
+                  </button>
+                  <button
+                    onClick={() => setModalOpen(true)}
+                    className="rounded-2xl bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-emerald-400"
+                  >
+                    Add Player
+                  </button>
+                </div>
+                <button
+                  onClick={handleToggleFullscreen}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-emerald-800 shadow hover:bg-white"
+                  aria-label="Exit fullscreen"
+                >
+                  ×
+                </button>
+              </div>
             )}
-          >
-            <div ref={boardRef} className="h-full w-full" data-export-board>
-              <SquadBoard
-                slots={FORMATION_SLOTS}
-                assignments={assignments}
-                playersById={playersById}
-                poolCount={availablePlayers.length}
-                onMissPlayer={handleMissPlayer}
-              />
-            </div>
-            <PlayerPool
-              players={poolPlayers}
-              collapsed={!showPool}
-              onToggle={() => setShowPool((prev) => !prev)}
-              height={boardHeight}
-              markedPlayerIds={markedPlayerIds}
-              onToggleMark={handleToggleMark}
-              assignedPlayerIds={Array.from(assignedPlayers)}
+            <SquadBoard
+              slots={FORMATION_SLOTS}
+              assignments={assignments}
+              playersById={playersById}
+              poolCount={availablePlayers.length}
+              onMissPlayer={handleMissPlayer}
+              showAbsents={absentMode}
+              isFullscreen={isFullscreen}
+              alternateJerseys={alternateJerseys}
             />
+            {isFullscreen && (
+              <div
+                className={clsx(
+                  "absolute inset-0 z-20 flex justify-end transition-all",
+                  showPool ? "pointer-events-auto" : "pointer-events-none",
+                )}
+              >
+                <div
+                  className={clsx(
+                    "absolute inset-0 bg-emerald-900/40 transition-opacity",
+                    showPool ? "opacity-100" : "opacity-0",
+                  )}
+                  onClick={() => setShowPool(false)}
+                />
+                <div
+                  className={clsx(
+                    "relative ml-auto h-full w-[80%] max-w-3xl bg-white/95 shadow-2xl transition-transform duration-300 ease-out",
+                    showPool ? "translate-x-0" : "translate-x-full",
+                  )}
+                >
+                  <PlayerPool
+                    players={poolPlayers}
+                    collapsed={false}
+                    onToggle={() => setShowPool(false)}
+                    markedPlayerIds={markedPlayerIds}
+                    onToggleMark={handleToggleMark}
+                    assignedPlayerIds={Array.from(assignedPlayers)}
+                    hideToggle
+                    toggleLabel="Close"
+                  />
+                </div>
+              </div>
+            )}
+            {isFullscreen && modalOpen && (
+              <AddPlayerModal onClose={() => setModalOpen(false)} onSubmit={handleAddPlayer} />
+            )}
           </div>
           <DragOverlay dropAnimation={null}>
             {draggingPlayer ? (
               <div className="w-32 rounded-3xl bg-emerald-900/70 px-3 py-2">
-                <PlayerBadge player={draggingPlayer} teamId="team-a" />
+                <PlayerBadge player={draggingPlayer} teamId="team-a" alternate={alternateJerseys} />
               </div>
             ) : null}
           </DragOverlay>
         </DndContext>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={handleDownloadBoard}
-            disabled={exporting}
-            className="rounded-2xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-500 disabled:bg-emerald-400"
-          >
-            تنزيل التشكيلة
-          </button>
-          <button
-            onClick={handleShareBoard}
-            disabled={exporting}
-            className="rounded-2xl border border-emerald-300 px-5 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:text-emerald-300"
-          >
-            مشاركة التشكيلة
-          </button>
-        </div>
       </div>
-      {modalOpen && (
+      {!isFullscreen && (
+        <div
+          className={clsx(
+            "fixed inset-0 z-50 flex justify-end transition-all",
+            showPool ? "pointer-events-auto" : "pointer-events-none",
+          )}
+        >
+          <div
+            className={clsx(
+              "absolute inset-0 bg-slate-900/40 transition-opacity",
+              showPool ? "opacity-100" : "opacity-0",
+            )}
+            onClick={() => setShowPool(false)}
+          />
+          <div
+            className={clsx(
+              "relative z-10 h-full bg-white shadow-2xl transition-transform duration-300 ease-out w-[80vw] max-w-2xl",
+              showPool ? "translate-x-0" : "translate-x-full",
+            )}
+          >
+            <PlayerPool
+              players={poolPlayers}
+              collapsed={false}
+              onToggle={() => setShowPool(false)}
+              markedPlayerIds={markedPlayerIds}
+              onToggleMark={handleToggleMark}
+              assignedPlayerIds={Array.from(assignedPlayers)}
+              hideToggle
+              toggleLabel="Close"
+            />
+          </div>
+        </div>
+      )}
+      {modalOpen && !isFullscreen && (
         <AddPlayerModal onClose={() => setModalOpen(false)} onSubmit={handleAddPlayer} />
       )}
     </main>

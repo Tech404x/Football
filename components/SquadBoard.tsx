@@ -29,9 +29,21 @@ export type SquadBoardProps = {
   playersById: Record<string, Player>;
   poolCount: number;
   onMissPlayer: (playerId: string) => void;
+  showAbsents?: boolean;
+  isFullscreen?: boolean;
+  alternateJerseys?: boolean;
 };
 
-export const SquadBoard = ({ slots, assignments, playersById, poolCount, onMissPlayer }: SquadBoardProps) => {
+export const SquadBoard = ({
+  slots,
+  assignments,
+  playersById,
+  poolCount,
+  onMissPlayer,
+  showAbsents,
+  isFullscreen,
+  alternateJerseys,
+}: SquadBoardProps) => {
   const [activeMenuPlayerId, setActiveMenuPlayerId] = useState<string | null>(null);
   const slotMap = useMemo(() => {
     return slots.reduce<Record<string, SquadSlot>>((acc, slot) => {
@@ -74,27 +86,39 @@ export const SquadBoard = ({ slots, assignments, playersById, poolCount, onMissP
     .map((teamId) => `${TEAM_SHORT_NAMES[teamId] ?? teamId} (${filledByTeam[teamId] ?? 0})`)
     .join(" vs ");
 
+  const fieldContainerClass = clsx(
+    "w-screen -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl",
+    isFullscreen && "w-full mx-auto sm:max-w-5xl",
+  );
+
+  const pitchClass = clsx(
+    "relative w-full bg-emerald-900 overflow-hidden",
+    isFullscreen ? "min-h-screen" : "h-[70vh] sm:h-[55vh]",
+  );
+
   return (
     <section className="flex flex-col gap-4 sm:gap-5" onClick={() => setActiveMenuPlayerId(null)}>
-      <header className="flex flex-wrap items-center justify-between gap-4 px-4 sm:px-0">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50/80">Squad Board</p>
-          <h2 className="text-xl sm:text-2xl font-bold">{matchupLabel}</h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
-          <div className="rounded-2xl bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2">
-            <span className="font-semibold">{filledCount}/{slots.length}</span>
-            <span className="ml-2 text-emerald-50/80">placed</span>
+      {!isFullscreen && (
+        <header className="flex flex-wrap items-center justify-between gap-4 px-4 sm:px-0">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50/80">Squad Board</p>
+            <h2 className="text-xl sm:text-2xl font-bold">{matchupLabel}</h2>
           </div>
-          <div className="rounded-2xl bg-white/5 px-2 py-1 sm:px-3 text-xs font-semibold text-emerald-50/80">
-            {poolCount} in pool
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
+            <div className="rounded-2xl bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2">
+              <span className="font-semibold">{filledCount}/{slots.length}</span>
+              <span className="ml-2 text-emerald-50/80">placed</span>
+            </div>
+            <div className="rounded-2xl bg-white/5 px-2 py-1 sm:px-3 text-xs font-semibold text-emerald-50/80">
+              {poolCount} in pool
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
       
       {/* Mobile-first pitch: full-width on mobile, constrained on larger screens */}
-      <div className="w-screen -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl">
-        <div className="relative w-full h-[70vh] sm:h-[55vh] bg-emerald-900 overflow-hidden">
+      <div className={fieldContainerClass}>
+        <div className={pitchClass}>
           <div className="absolute inset-0 pointer-events-none">
             {/* Field lines - minimal padding for more space */}
             <div className="absolute inset-1 sm:inset-2 border-2 border-white/30 rounded-2xl"></div>
@@ -119,7 +143,20 @@ export const SquadBoard = ({ slots, assignments, playersById, poolCount, onMissP
                           {lineSlots.map((slot) => {
                             const playerId = assignments[slot.id];
                             const player = playerId ? playersById[playerId] : undefined;
-                            return <PositionSlot key={slot.id} slot={slot} player={player} onMissPlayer={onMissPlayer} activeMenuPlayerId={activeMenuPlayerId} setActiveMenuPlayerId={setActiveMenuPlayerId} />;
+                            return (
+                              <PositionSlot
+                                key={slot.id}
+                                slot={slot}
+                                player={player}
+                                onMissPlayer={onMissPlayer}
+                                activeMenuPlayerId={activeMenuPlayerId}
+                                setActiveMenuPlayerId={setActiveMenuPlayerId}
+                                showRemoveControl={showAbsents}
+                                onRemovePlayer={onMissPlayer}
+                                large={isFullscreen}
+                                alternate={alternateJerseys}
+                              />
+                            );
                           })}
                         </div>
                       </div>
@@ -143,7 +180,20 @@ export const SquadBoard = ({ slots, assignments, playersById, poolCount, onMissP
                           {lineSlots.map((slot) => {
                             const playerId = assignments[slot.id];
                             const player = playerId ? playersById[playerId] : undefined;
-                            return <PositionSlot key={slot.id} slot={slot} player={player} onMissPlayer={onMissPlayer} activeMenuPlayerId={activeMenuPlayerId} setActiveMenuPlayerId={setActiveMenuPlayerId} />;
+                            return (
+                              <PositionSlot
+                                key={slot.id}
+                                slot={slot}
+                                player={player}
+                                onMissPlayer={onMissPlayer}
+                                activeMenuPlayerId={activeMenuPlayerId}
+                                setActiveMenuPlayerId={setActiveMenuPlayerId}
+                                showRemoveControl={showAbsents}
+                                onRemovePlayer={onMissPlayer}
+                                large={isFullscreen}
+                                alternate={alternateJerseys}
+                              />
+                            );
                           })}
                         </div>
                       </div>
@@ -152,6 +202,9 @@ export const SquadBoard = ({ slots, assignments, playersById, poolCount, onMissP
                 </div>
               );
             })()}
+            <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 rounded-full bg-white/30 px-6 py-1 text-sm font-semibold text-slate-900">
+              {matchupLabel}
+            </div>
           </div>
         </div>
       </div>

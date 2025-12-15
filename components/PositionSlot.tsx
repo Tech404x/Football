@@ -13,11 +13,16 @@ const jerseyClasses = {
 export const PlayerBadge = ({
   player,
   teamId,
+  large,
+  alternate,
 }: {
   player: Player;
   teamId: TeamId;
+  large?: boolean;
+  alternate?: boolean;
 }) => {
-  const variant = teamId === "team-a" ? "light" : "dark";
+  const isTeamALight = alternate ? teamId === "team-b" : teamId === "team-a";
+  const variant = isTeamALight ? "light" : "dark";
   const firstName = player.name.trim().split(/\s+/)[0] ?? player.name;
 
   return (
@@ -25,20 +30,48 @@ export const PlayerBadge = ({
       <div
         className={clsx(
           "flex items-center justify-center rounded-xl sm:rounded-2xl font-bold uppercase shadow-lg",
-          "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
+          large
+            ? "h-9 w-9 sm:h-14 sm:w-14 text-[10px] sm:text-sm"
+            : "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
           jerseyClasses[variant],
         )}
       >
         {player.preferredPosition}
       </div>
-      <p className="text-sm sm:text-lg font-semibold text-white drop-shadow text-right" dir="rtl">
+      <p
+        className={clsx(
+          "font-semibold text-white drop-shadow text-right",
+          large ? "text-xl sm:text-3xl" : "text-sm sm:text-lg",
+        )}
+        dir="rtl"
+      >
         {player.name}
       </p>
     </div>
   );
 };
 
-const SlotPlayer = ({ player, slot, onMissPlayer, activeMenuPlayerId, setActiveMenuPlayerId }: { player: Player; slot: SquadSlot; onMissPlayer: (playerId: string) => void; activeMenuPlayerId: string | null; setActiveMenuPlayerId: (id: string | null) => void }) => {
+const SlotPlayer = ({
+  player,
+  slot,
+  onMissPlayer,
+  activeMenuPlayerId,
+  setActiveMenuPlayerId,
+  showRemoveControl,
+  onRemovePlayer,
+  large,
+  alternate,
+}: {
+  player: Player;
+  slot: SquadSlot;
+  onMissPlayer: (playerId: string) => void;
+  activeMenuPlayerId: string | null;
+  setActiveMenuPlayerId: (id: string | null) => void;
+  showRemoveControl?: boolean;
+  onRemovePlayer?: (playerId: string) => void;
+  large?: boolean;
+  alternate?: boolean;
+}) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: player.id,
     data: { type: "player", playerId: player.id },
@@ -62,6 +95,12 @@ const SlotPlayer = ({ player, slot, onMissPlayer, activeMenuPlayerId, setActiveM
     setActiveMenuPlayerId(null);
   };
 
+  const handleRemoveClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    (onRemovePlayer ?? onMissPlayer)(player.id);
+    setActiveMenuPlayerId(null);
+  };
+
   return (
     <div className="relative">
       <div
@@ -72,8 +111,16 @@ const SlotPlayer = ({ player, slot, onMissPlayer, activeMenuPlayerId, setActiveM
         className={clsx("cursor-grab touch-none", isDragging && "opacity-80")}
         onClick={handleClick}
       >
-        <PlayerBadge player={player} teamId={slot.teamId} />
+        <PlayerBadge player={player} teamId={slot.teamId} large={large} alternate={alternate} />
       </div>
+      {showRemoveControl && (
+        <button
+          onClick={handleRemoveClick}
+          className="absolute -top-2 -right-2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow-lg"
+        >
+          X
+        </button>
+      )}
       {showMenu && (
         <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10">
           <button
@@ -94,9 +141,23 @@ export type PositionSlotProps = {
   onMissPlayer: (playerId: string) => void;
   activeMenuPlayerId: string | null;
   setActiveMenuPlayerId: (id: string | null) => void;
+  showRemoveControl?: boolean;
+  onRemovePlayer?: (playerId: string) => void;
+  large?: boolean;
+  alternate?: boolean;
 };
 
-export const PositionSlot = ({ slot, player, onMissPlayer, activeMenuPlayerId, setActiveMenuPlayerId }: PositionSlotProps) => {
+export const PositionSlot = ({
+  slot,
+  player,
+  onMissPlayer,
+  activeMenuPlayerId,
+  setActiveMenuPlayerId,
+  showRemoveControl,
+  onRemovePlayer,
+  large,
+  alternate,
+}: PositionSlotProps) => {
   const { isOver, setNodeRef } = useDroppable({
     id: slot.id,
     data: { type: "slot", slotId: slot.id },
@@ -112,7 +173,19 @@ export const PositionSlot = ({ slot, player, onMissPlayer, activeMenuPlayerId, s
         isEmpty && !isOver && "opacity-0",
       )}
     >
-      {player ? <SlotPlayer player={player} slot={slot} onMissPlayer={onMissPlayer} activeMenuPlayerId={activeMenuPlayerId} setActiveMenuPlayerId={setActiveMenuPlayerId} /> : null}
+      {player ? (
+          <SlotPlayer
+            player={player}
+            slot={slot}
+            onMissPlayer={onMissPlayer}
+            activeMenuPlayerId={activeMenuPlayerId}
+            setActiveMenuPlayerId={setActiveMenuPlayerId}
+            showRemoveControl={showRemoveControl}
+            onRemovePlayer={onRemovePlayer}
+            large={large}
+            alternate={alternate}
+          />
+      ) : null}
     </div>
   );
 };

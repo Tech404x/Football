@@ -1,6 +1,6 @@
 "use client";
 
-import { useDroppable, useDraggable } from "@dnd-kit/core";
+import { useDroppable } from "@dnd-kit/core";
 import clsx from "clsx";
 import { useMemo, useRef, type MouseEvent } from "react";
 import type { Player } from "@/types/player";
@@ -14,12 +14,14 @@ const PlayerPoolCard = ({
   onToggleMark,
   numberLabel,
   className,
+  inactive,
 }: {
   player: Player;
   marked: boolean;
   onToggleMark: (playerId: string) => void;
   numberLabel: string;
   className?: string;
+  inactive?: boolean;
 }) => {
   const handleCheckboxClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -30,8 +32,9 @@ const PlayerPoolCard = ({
     <div className={clsx("w-full", className)}>
       <PlayerCard
         player={player}
-        dimmed={!marked}
         numberLabel={numberLabel}
+        highlight={!inactive}
+        inactive={inactive}
         markControl={
           <button
             onMouseDown={(event) => event.stopPropagation()}
@@ -51,73 +54,32 @@ const PlayerPoolCard = ({
   );
 };
 
-const ActivePoolPlayer = ({
-  player,
-  marked,
-  onToggleMark,
-  numberLabel,
-}: {
-  player: Player;
-  marked: boolean;
-  onToggleMark: (playerId: string) => void;
-  numberLabel: string;
-}) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: player.id,
-    data: { type: "player", playerId: player.id },
-  });
-
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className={clsx("w-full cursor-grab touch-none", isDragging && "opacity-70")}
-    >
-      <PlayerPoolCard
-        player={player}
-        marked={marked}
-        onToggleMark={onToggleMark}
-        numberLabel={numberLabel}
-      />
-    </div>
-  );
-};
-
 const DraggablePoolPlayer = ({
   player,
   marked,
   onToggleMark,
   numberLabel,
   assigned,
+  inactive,
 }: {
   player: Player;
   marked: boolean;
   onToggleMark: (playerId: string) => void;
   numberLabel: string;
   assigned: boolean;
+  inactive?: boolean;
 }) => {
   const disabled = assigned || !marked;
-  if (disabled) {
-    return (
-      <PlayerPoolCard
-        player={player}
-        marked={marked}
-        onToggleMark={onToggleMark}
-        numberLabel={numberLabel}
-        className="cursor-not-allowed touch-none opacity-50"
-      />
-    );
-  }
-
-  return <ActivePoolPlayer player={player} marked={marked} onToggleMark={onToggleMark} numberLabel={numberLabel} />;
+  return (
+    <PlayerPoolCard
+      player={player}
+      marked={marked}
+      onToggleMark={onToggleMark}
+      numberLabel={numberLabel}
+      inactive={inactive}
+      className={clsx(disabled ? "opacity-60" : "", "cursor-default")}
+    />
+  );
 };
 
 export type PlayerPoolProps = {
@@ -128,6 +90,8 @@ export type PlayerPoolProps = {
   markedPlayerIds: string[];
   onToggleMark: (playerId: string) => void;
   assignedPlayerIds: string[];
+  hideToggle?: boolean;
+  toggleLabel?: string;
 };
 
 export const PlayerPool = ({
@@ -138,6 +102,8 @@ export const PlayerPool = ({
   markedPlayerIds,
   onToggleMark,
   assignedPlayerIds,
+  hideToggle,
+  toggleLabel,
 }: PlayerPoolProps) => {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const { isOver, setNodeRef } = useDroppable({ id: PLAYER_POOL_DROP_ID });
@@ -198,12 +164,14 @@ export const PlayerPool = ({
             Available Players ({markedPlayerIds.length} of {players.length})
           </h2>
         </div>
-        <button
-          onClick={onToggle}
-          className="rounded-full border border-emerald-200 px-4 py-1 text-sm font-medium text-emerald-700"
-        >
-          {collapsed ? "Show" : "Hide"}
-        </button>
+        {!hideToggle && (
+          <button
+            onClick={onToggle}
+            className="rounded-full border border-emerald-200 px-4 py-1 text-sm font-medium text-emerald-700"
+          >
+            {toggleLabel ?? (collapsed ? "Show" : "Hide")}
+          </button>
+        )}
       </header>
       <div className="flex-1 min-h-0">
         <div
@@ -226,6 +194,7 @@ export const PlayerPool = ({
                 const assigned = assignedSet.has(player.id);
                 const numberLabel = marked ? String(activeNumber++) : String(inactiveNumber++);
                 const groupKey = marked ? (assigned ? 1 : 0) : assigned ? 3 : 2;
+                const inactive = !marked;
                 const showDivider = lastGroup !== undefined && groupKey !== lastGroup;
                 lastGroup = groupKey;
                 return (
@@ -237,6 +206,7 @@ export const PlayerPool = ({
                       onToggleMark={handleToggleMarkWithScroll}
                       numberLabel={numberLabel}
                       assigned={assigned}
+                      inactive={inactive}
                     />
                   </div>
                 );
