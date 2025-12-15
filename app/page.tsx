@@ -9,6 +9,15 @@ import { PlayerPool, PLAYER_POOL_DROP_ID } from "@/components/PlayerPool";
 import { SquadBoard } from "@/components/SquadBoard";
 import { TopControls } from "@/components/TopControls";
 import { PlayerBadge } from "@/components/PositionSlot";
+import {
+  UserGroupIcon,
+  NoSymbolIcon,
+  ArrowPathIcon,
+  PlusIcon,
+  ArrowsPointingInIcon,
+  ArrowsPointingOutIcon,
+} from "@heroicons/react/24/solid";
+import { Shirt as ShirtIcon } from "lucide-react";
 import { mockPlayers } from "@/lib/mockPlayers";
 import {
   autoAssignPlayers,
@@ -94,7 +103,7 @@ export default function HomePage() {
       setMarkedPlayerIds(stored.markedPlayerIds ?? []);
     } else {
       // By default, mark all players as active except the specified inactive players
-      const inactivePlayerIds = ["p22", "p13", "p11", ""]; // صديق هباني, امين مبارك, معاذ الأزرق
+      const inactivePlayerIds = ["p22", "p13", "p11", "p16","p9"]; // صديق هباني, امين مبارك, معاذ الأزرق
       const allPlayerIds = mockPlayers.map(player => player.id);
       const activePlayerIds = allPlayerIds.filter(id => !inactivePlayerIds.includes(id));
       setMarkedPlayerIds(activePlayerIds);
@@ -145,6 +154,19 @@ export default function HomePage() {
     () => players.filter((player) => markedPlayerIds.includes(player.id)),
     [players, markedPlayerIds],
   );
+  const teamCounts = useMemo(() => {
+    const counts: Record<TeamId, number> = { "team-a": 0, "team-b": 0 };
+    Object.entries(assignments).forEach(([slotId, playerId]) => {
+      if (!playerId) {
+        return;
+      }
+      const slot = FORMATION_SLOT_MAP[slotId];
+      if (slot) {
+        counts[slot.teamId] += 1;
+      }
+    });
+    return counts;
+  }, [assignments]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const playerId = event.active?.data?.current?.playerId as string | undefined;
@@ -326,70 +348,94 @@ export default function HomePage() {
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className="relative w-full" ref={boardRef} data-export-board>
             {isFullscreen && (
-              <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-2 bg-gradient-to-b from-emerald-900/80 to-transparent px-4 py-3">
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="sticky top-0 z-30 bg-emerald-900/90 px-4 py-3 shadow-lg">
+                <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 text-white">
+                  <div className="flex flex-wrap items-center gap-6 text-2xl">
+                    <button
+                      onClick={() => setShowPool(true)}
+                      className="text-white transition hover:text-emerald-200"
+                      aria-label="Player Pool"
+                    >
+                      <UserGroupIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={() => setAbsentMode((prev) => !prev)}
+                      className={clsx(
+                        "transition",
+                        absentMode ? "text-red-300" : "text-white hover:text-emerald-200",
+                      )}
+                      aria-label="Absents"
+                    >
+                      <NoSymbolIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={() => setAlternateJerseys((prev) => !prev)}
+                      className={clsx(
+                        "transition",
+                        alternateJerseys ? "text-emerald-200" : "text-white hover:text-emerald-200",
+                      )}
+                      aria-label="Swap Shirts"
+                    >
+                      <ShirtIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={handleRegenerate}
+                      aria-label="Regenerate"
+                      className="text-white transition hover:text-emerald-200"
+                    >
+                      <ArrowPathIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={() => setModalOpen(true)}
+                      aria-label="Add Player"
+                      className="text-white transition hover:text-emerald-200"
+                    >
+                      <PlusIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm font-semibold text-white">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-900 bg-white text-emerald-900 font-bold">
+                      {teamCounts[alternateJerseys ? 'team-b' : 'team-a']}
+                    </span>
+                    <span className="text-white/70">vs</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white bg-black text-white font-bold">
+                      {teamCounts[alternateJerseys ? 'team-a' : 'team-b']}
+                    </span>
+                  </div>
                   <button
-                    onClick={() => setShowPool(true)}
-                    className="rounded-2xl bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-700 shadow hover:bg-white"
+                    onClick={handleToggleFullscreen}
+                    className="text-white transition hover:text-emerald-200"
+                    aria-label="Exit fullscreen"
                   >
-                    Player Pool
-                  </button>
-                  <button
-                    onClick={() => setAbsentMode((prev) => !prev)}
-                    className={clsx(
-                      "rounded-2xl px-3 py-1 text-xs font-semibold shadow",
-                      absentMode ? "bg-red-600 text-white" : "bg-white/80 text-emerald-700 hover:bg-white",
+                    {isFullscreen ? (
+                      <ArrowsPointingInIcon className="h-5 w-5" aria-hidden="true" />
+                    ) : (
+                      <ArrowsPointingOutIcon className="h-5 w-5" aria-hidden="true" />
                     )}
-                  >
-                    {absentMode ? "Absents On" : "Absents"}
-                  </button>
-                  <button
-                    onClick={() => setAlternateJerseys((prev) => !prev)}
-                    className={clsx(
-                      "rounded-2xl px-3 py-1 text-xs font-semibold shadow",
-                      alternateJerseys
-                        ? "bg-emerald-700 text-white"
-                        : "bg-white/80 text-emerald-700 hover:bg-white",
-                    )}
-                  >
-                    Shirts
-                  </button>
-                  <button
-                    onClick={() => setModalOpen(true)}
-                    className="rounded-2xl bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-emerald-400"
-                  >
-                    Add Player
                   </button>
                 </div>
-                <button
-                  onClick={handleToggleFullscreen}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-emerald-800 shadow hover:bg-white"
-                  aria-label="Exit fullscreen"
-                >
-                  ×
-                </button>
               </div>
             )}
             <SquadBoard
               slots={FORMATION_SLOTS}
               assignments={assignments}
               playersById={playersById}
-              poolCount={availablePlayers.length}
               onMissPlayer={handleMissPlayer}
               showAbsents={absentMode}
               isFullscreen={isFullscreen}
               alternateJerseys={alternateJerseys}
             />
             {isFullscreen && (
-              <div
-                className={clsx(
-                  "absolute inset-0 z-20 flex justify-end transition-all",
-                  showPool ? "pointer-events-auto" : "pointer-events-none",
-                )}
-              >
                 <div
                   className={clsx(
-                    "absolute inset-0 bg-emerald-900/40 transition-opacity",
+                    "absolute inset-0 z-20 flex justify-end transition-all",
+                    showPool ? "pointer-events-auto" : "pointer-events-none",
+                  )}
+                  style={{ paddingTop: "56px" }}
+                >
+                  <div
+                    className={clsx(
+                      "absolute inset-0 bg-emerald-900/40 transition-opacity",
                     showPool ? "opacity-100" : "opacity-0",
                   )}
                   onClick={() => setShowPool(false)}

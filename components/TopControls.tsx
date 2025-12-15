@@ -1,6 +1,19 @@
 "use client";
 
 import clsx from "clsx";
+import type { ReactNode } from "react";
+import {
+  UserGroupIcon,
+  NoSymbolIcon,
+  ArrowsPointingOutIcon,
+  ArrowsPointingInIcon,
+  ArrowPathIcon,
+  PlusIcon,
+  ArrowUturnLeftIcon,
+  BookmarkSquareIcon,
+} from "@heroicons/react/24/solid";
+import { Shirt as ShirtIcon } from "lucide-react";
+
 export type TopControlsProps = {
   onSave?: () => void;
   onReset: () => void;
@@ -18,27 +31,32 @@ export type TopControlsProps = {
 };
 
 const ControlButton = ({
-  label,
+  icon,
   onClick,
   variant = "ghost",
   disabled,
+  srLabel,
 }: {
-  label: string;
+  icon: ReactNode;
   onClick: () => void;
   variant?: "primary" | "ghost";
   disabled?: boolean;
+  srLabel: string;
 }) => (
   <button
     onClick={onClick}
     disabled={disabled}
+    aria-label={srLabel}
     className={clsx(
-      "rounded-2xl px-4 py-2 text-sm font-semibold transition",
+      "flex h-10 w-10 items-center justify-center rounded-full text-sm transition",
       variant === "primary"
         ? "bg-emerald-600 text-white shadow-lg hover:bg-emerald-500 disabled:bg-emerald-300"
         : "border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:text-emerald-300",
     )}
   >
-    {label}
+    <span aria-hidden="true" className="h-5 w-5">
+      {icon}
+    </span>
   </button>
 );
 
@@ -60,40 +78,60 @@ export const TopControls = ({
   return (
     <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-white/80 p-4 shadow">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900">Squad Selector</h1>
-        <p className="text-sm text-slate-500">Drag & drop to build your lineup.</p>
+        <h1 className="text-2xl font-bold text-slate-900 mx-auto text-center">Squad Selector</h1>
         {lastSavedMessage && <p className="text-xs font-semibold text-emerald-600">{lastSavedMessage}</p>}
       </div>
       <div className="flex flex-col items-end gap-3">
         <div className="flex flex-wrap justify-end gap-2">
           {onTogglePlayerPool && (
-            <ControlButton label="Player Pool" onClick={onTogglePlayerPool} variant="primary" />
+            <ControlButton
+              icon={<UserGroupIcon className="h-5 w-5" />}
+              srLabel="Player Pool"
+              onClick={onTogglePlayerPool}
+              variant="primary"
+            />
           )}
           {onToggleAbsents && (
             <ControlButton
-              label="Absents"
+              icon={<NoSymbolIcon className="h-5 w-5" />}
+              srLabel="Toggle Absents"
               onClick={onToggleAbsents}
               variant={absentsActive ? "primary" : "ghost"}
             />
           )}
           {onToggleJerseys && (
             <ControlButton
-              label="Shirts"
+              icon={<ShirtIcon className="h-5 w-5" />}
+              srLabel="Swap Shirts"
               onClick={onToggleJerseys}
               variant={jerseysSwapped ? "primary" : "ghost"}
             />
           )}
           {onToggleFullscreen && (
             <ControlButton
-              label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              icon={isFullscreen ? <ArrowsPointingInIcon className="h-5 w-5" /> : <ArrowsPointingOutIcon className="h-5 w-5" />}
+              srLabel={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
               onClick={onToggleFullscreen}
               variant={isFullscreen ? "primary" : "ghost"}
             />
           )}
-          <ControlButton label="Regenerate" onClick={onRegenerate} variant="ghost" disabled={isRegenerateDisabled} />
-          <ControlButton label="Add Player" onClick={onAddPlayer} variant="ghost" />
-          <ControlButton label="Reset" onClick={onReset} variant="ghost" />
-          {onSave && <ControlButton label="Save" onClick={onSave} variant="primary" />}
+          <ControlButton
+            icon={<ArrowPathIcon className="h-5 w-5" />}
+            srLabel="Regenerate"
+            onClick={onRegenerate}
+            variant="ghost"
+            disabled={isRegenerateDisabled}
+          />
+          <ControlButton icon={<PlusIcon className="h-5 w-5" />} srLabel="Add Player" onClick={onAddPlayer} variant="ghost" />
+          <ControlButton
+            icon={<ArrowUturnLeftIcon className="h-5 w-5" />}
+            srLabel="Reset"
+            onClick={onReset}
+            variant="ghost"
+          />
+          {onSave && (
+            <ControlButton icon={<BookmarkSquareIcon className="h-5 w-5" />} srLabel="Save" onClick={onSave} variant="primary" />
+          )}
         </div>
       </div>
     </section>

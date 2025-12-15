@@ -18,16 +18,11 @@ const buildLineSlots = (slots: SquadSlot[], line: Position) => {
     .sort((a, b) => a.order - b.order);
 };
 
-const TEAM_SHORT_NAMES: Record<TeamId, string> = {
-  "team-a": "White",
-  "team-b": "Black",
-};
-
 export type SquadBoardProps = {
   slots: SquadSlot[];
   assignments: AssignmentMap;
   playersById: Record<string, Player>;
-  poolCount: number;
+
   onMissPlayer: (playerId: string) => void;
   showAbsents?: boolean;
   isFullscreen?: boolean;
@@ -38,7 +33,7 @@ export const SquadBoard = ({
   slots,
   assignments,
   playersById,
-  poolCount,
+
   onMissPlayer,
   showAbsents,
   isFullscreen,
@@ -62,7 +57,7 @@ export const SquadBoard = ({
     return ids;
   }, [slots]);
 
-  const filledCount = Object.values(assignments).filter(Boolean).length;
+
   const filledByTeam = teamIds.reduce<Record<TeamId, number>>((acc, teamId) => {
     acc[teamId] = 0;
     return acc;
@@ -82,18 +77,16 @@ export const SquadBoard = ({
     gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
   });
 
-  const matchupLabel = teamIds
-    .map((teamId) => `${TEAM_SHORT_NAMES[teamId] ?? teamId} (${filledByTeam[teamId] ?? 0})`)
-    .join(" vs ");
-
   const fieldContainerClass = clsx(
     "w-screen -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl",
     isFullscreen && "w-full mx-auto sm:max-w-5xl",
   );
 
   const pitchClass = clsx(
-    "relative w-full bg-emerald-900 overflow-hidden",
-    isFullscreen ? "min-h-screen" : "h-[70vh] sm:h-[55vh]",
+    "relative w-full overflow-hidden",
+    "bg-gradient-to-b from-[#1b7f3a] via-[#147033] to-[#0b4f23]",
+    "before:absolute before:inset-0 before:bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.04)_0,rgba(255,255,255,0.04)_12px,transparent_12px,transparent_24px)] before:opacity-40 before:pointer-events-none",
+    isFullscreen ? "min-h-[calc(100vh-100px)]" : "h-[70vh] sm:h-[55vh]",
   );
 
   return (
@@ -102,17 +95,8 @@ export const SquadBoard = ({
         <header className="flex flex-wrap items-center justify-between gap-4 px-4 sm:px-0">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50/80">Squad Board</p>
-            <h2 className="text-xl sm:text-2xl font-bold">{matchupLabel}</h2>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
-            <div className="rounded-2xl bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2">
-              <span className="font-semibold">{filledCount}/{slots.length}</span>
-              <span className="ml-2 text-emerald-50/80">placed</span>
-            </div>
-            <div className="rounded-2xl bg-white/5 px-2 py-1 sm:px-3 text-xs font-semibold text-emerald-50/80">
-              {poolCount} in pool
-            </div>
-          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm" />
         </header>
       )}
       
@@ -120,12 +104,20 @@ export const SquadBoard = ({
       <div className={fieldContainerClass}>
         <div className={pitchClass}>
           <div className="absolute inset-0 pointer-events-none">
-            {/* Field lines - minimal padding for more space */}
-            <div className="absolute inset-1 sm:inset-2 border-2 border-white/30 rounded-2xl"></div>
-            <div className="absolute inset-x-4 sm:inset-x-6 top-1/2 h-0.5 sm:h-1 border-t border-white/40"></div>
-            <div className="absolute left-1/2 top-1/2 h-16 w-16 sm:h-24 sm:w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 sm:border-4 border-white/30"></div>
-            <div className="absolute inset-x-4 sm:inset-x-6 top-[30%] h-10 sm:h-16 border-y border-white/20"></div>
-            <div className="absolute inset-x-4 sm:inset-x-6 bottom-[30%] h-10 sm:h-16 border-y border-white/20"></div>
+            <div className="absolute inset-1 sm:inset-2 rounded-2xl border-2 border-white/40"></div>
+            <div className="absolute inset-x-4 sm:inset-x-6 top-1/2 h-0.5 sm:h-1 border-t border-white/60"></div>
+            <div className="absolute left-1/2 top-1/2 h-16 w-16 sm:h-24 sm:w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 sm:border-4 border-white/60"></div>
+            <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
+
+            {/* Top penalty box */}
+            <div className="absolute left-1/2 top-0 h-[22%] w-[60%] -translate-x-1/2 border-2 border-white/60 border-t-0"></div>
+            <div className="absolute left-1/2 top-0 h-[12%] w-[30%] -translate-x-1/2 border-2 border-white/60 border-t-0"></div>
+            <div className="absolute left-1/2 top-0 h-[6%] w-[15%] -translate-x-1/2 border-2 border-white/60 border-t-0"></div>
+
+            {/* Bottom penalty box */}
+            <div className="absolute left-1/2 bottom-0 h-[22%] w-[60%] -translate-x-1/2 border-2 border-white/60 border-b-0"></div>
+            <div className="absolute left-1/2 bottom-0 h-[12%] w-[30%] -translate-x-1/2 border-2 border-white/60 border-b-0"></div>
+            <div className="absolute left-1/2 bottom-0 h-[6%] w-[15%] -translate-x-1/2 border-2 border-white/60 border-b-0"></div>
           </div>
           {/* Team positioning on football field */}
           <div className="absolute inset-1 sm:inset-2 z-10">
@@ -202,9 +194,6 @@ export const SquadBoard = ({
                 </div>
               );
             })()}
-            <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 rounded-full bg-white/30 px-6 py-1 text-sm font-semibold text-slate-900">
-              {matchupLabel}
-            </div>
           </div>
         </div>
       </div>
