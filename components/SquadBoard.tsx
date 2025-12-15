@@ -108,16 +108,6 @@ export const SquadBoard = ({
             <div className="absolute inset-x-4 sm:inset-x-6 top-1/2 h-0.5 sm:h-1 border-t border-white/60"></div>
             <div className="absolute left-1/2 top-1/2 h-16 w-16 sm:h-24 sm:w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 sm:border-4 border-white/60"></div>
             <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
-
-            {/* Top penalty box */}
-            <div className="absolute left-1/2 top-0 h-[22%] w-[60%] -translate-x-1/2 border-2 border-white/60 border-t-0"></div>
-            <div className="absolute left-1/2 top-0 h-[12%] w-[30%] -translate-x-1/2 border-2 border-white/60 border-t-0"></div>
-            <div className="absolute left-1/2 top-0 h-[6%] w-[15%] -translate-x-1/2 border-2 border-white/60 border-t-0"></div>
-
-            {/* Bottom penalty box */}
-            <div className="absolute left-1/2 bottom-0 h-[22%] w-[60%] -translate-x-1/2 border-2 border-white/60 border-b-0"></div>
-            <div className="absolute left-1/2 bottom-0 h-[12%] w-[30%] -translate-x-1/2 border-2 border-white/60 border-b-0"></div>
-            <div className="absolute left-1/2 bottom-0 h-[6%] w-[15%] -translate-x-1/2 border-2 border-white/60 border-b-0"></div>
           </div>
           {/* Team positioning on football field */}
           <div className="absolute inset-1 sm:inset-2 z-10">
@@ -200,3 +190,5 @@ export const SquadBoard = ({
     </section>
   );
 };
+
+
