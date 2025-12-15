@@ -45,6 +45,15 @@ const getDefaultActivePlayerIds = (players: Player[]): string[] => {
   });
 };
 
+const shufflePlayers = (list: Player[]): Player[] => {
+  const arr = [...list];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 const assignPlayerToBoard = (
   current: AssignmentMap,
   player: Player,
@@ -250,7 +259,8 @@ export default function HomePage() {
     const defaultActiveIds = getDefaultActivePlayerIds(players);
     const nextMarkedPlayers = players.filter((player) => defaultActiveIds.includes(player.id));
     setMarkedPlayerIds(defaultActiveIds);
-    const autoAssignments = autoAssignPlayers(nextMarkedPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
+    const shuffledPlayers = shufflePlayers(nextMarkedPlayers);
+    const autoAssignments = autoAssignPlayers(shuffledPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
     setAssignments(autoAssignments);
     setLastSavedMessage("Squad reset and auto-filled");
     setResetConfirmOpen(false);
