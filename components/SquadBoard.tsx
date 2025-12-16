@@ -82,8 +82,8 @@ export const SquadBoard = ({
   });
 
   const fieldContainerClass = clsx(
-    "w-screen -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl",
-    isFullscreen && "w-full mx-auto sm:max-w-5xl",
+    "mx-auto w-full",
+    isFullscreen ? "max-w-5xl" : "max-w-4xl",
   );
 
   const pitchClass = clsx(

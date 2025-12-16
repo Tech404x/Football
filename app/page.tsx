@@ -7,7 +7,6 @@ import { nanoid } from "nanoid";
 import { AddPlayerModal, type AddPlayerValues } from "@/components/AddPlayerModal";
 import { PlayerPool, PLAYER_POOL_DROP_ID } from "@/components/PlayerPool";
 import { SquadBoard } from "@/components/SquadBoard";
-import { TopControls } from "@/components/TopControls";
 import { PlayerBadge } from "@/components/PositionSlot";
 import {
   UserGroupIcon,
@@ -120,7 +119,7 @@ export default function HomePage() {
     if (stored) {
       setPlayers(stored.players);
       setAssignments(ensureAssignmentsIntegrity(stored.players, stored.assignments));
-      setShowPool(stored.showPool);
+      setShowPool(false);
       setMarkedPlayerIds(stored.markedPlayerIds ?? []);
     } else {
       const activePlayerIds = getDefaultActivePlayerIds(mockPlayers);
@@ -346,6 +345,15 @@ export default function HomePage() {
     });
   };
 
+  const togglePlayerPool = () => {
+    setShowPool((prev) => !prev);
+  };
+
+  const pitchWidthClass = clsx(
+    "mx-auto w-full",
+    isFullscreen ? "max-w-5xl" : "max-w-4xl",
+  );
+
   const handleMissPlayer = (playerId: string) => {
     setAssignments((current) => {
       const next = removePlayerFromAssignments(playerId, current);
@@ -393,27 +401,19 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-100 px-4 py-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 pb-16">
-        <TopControls
-          onReset={handleResetRequest}
-          onRegenerate={handleRegenerate}
-          onAddPlayer={() => setModalOpen(true)}
-          onTogglePlayerPool={() => setShowPool(true)}
-          onToggleAbsents={() => setAbsentMode((prev) => !prev)}
-          absentsActive={absentMode}
-          onToggleFullscreen={handleToggleFullscreen}
-          isFullscreen={isFullscreen}
-          onToggleJerseys={() => setAlternateJerseys((prev) => !prev)}
-          jerseysSwapped={alternateJerseys}
-          isRegenerateDisabled={assignedPlayers.size === 0}
-        />
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className="relative w-full" ref={boardRef} data-export-board>
-            {isFullscreen && (
-              <div className="sticky top-0 z-30 bg-emerald-900/90 px-4 py-3 shadow-lg">
-                <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 text-white">
+            <div className={pitchWidthClass}>
+              <div
+                className={clsx(
+                  isFullscreen ? "sticky top-0" : "relative",
+                  "z-30 bg-emerald-900/90 py-3 shadow-lg",
+                )}
+              >
+                <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 px-4 text-white">
                   <div className="flex flex-wrap items-center gap-6 text-2xl">
                     <button
-                      onClick={() => setShowPool(true)}
+                      onClick={togglePlayerPool}
                       className="text-white transition hover:text-emerald-200"
                       aria-label="Player Pool"
                     >
@@ -483,18 +483,18 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
-            )}
-            <SquadBoard
-              slots={FORMATION_SLOTS}
-              assignments={assignments}
-              playersById={playersById}
-              onMissPlayer={handleMissPlayer}
-              showAbsents={absentMode}
-              isFullscreen={isFullscreen}
-              alternateJerseys={alternateJerseys}
-              dragOriginSlotId={dragOriginSlotId}
-              showSwapPreview={swapPreviewActive}
-            />
+              <SquadBoard
+                slots={FORMATION_SLOTS}
+                assignments={assignments}
+                playersById={playersById}
+                onMissPlayer={handleMissPlayer}
+                showAbsents={absentMode}
+                isFullscreen
+                alternateJerseys={alternateJerseys}
+                dragOriginSlotId={dragOriginSlotId}
+                showSwapPreview={swapPreviewActive}
+              />
+            </div>
             {resetConfirmOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
                 <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
@@ -519,27 +519,13 @@ export default function HomePage() {
                 </div>
               </div>
             )}
-            {isFullscreen && (
+            {showPool && (
+              <div className="absolute inset-0 z-20 flex justify-end" style={{ paddingTop: "56px" }}>
                 <div
-                  className={clsx(
-                    "absolute inset-0 z-20 flex justify-end transition-all",
-                    showPool ? "pointer-events-auto" : "pointer-events-none",
-                  )}
-                  style={{ paddingTop: "56px" }}
-                >
-                  <div
-                    className={clsx(
-                      "absolute inset-0 bg-emerald-900/40 transition-opacity",
-                    showPool ? "opacity-100" : "opacity-0",
-                  )}
+                  className="absolute inset-0 bg-emerald-900/40 transition-opacity"
                   onClick={() => setShowPool(false)}
                 />
-                <div
-                  className={clsx(
-                    "relative ml-auto h-full w-[80%] max-w-3xl bg-white/95 shadow-2xl transition-transform duration-300 ease-out",
-                    showPool ? "translate-x-0" : "translate-x-full",
-                  )}
-                >
+                <div className="relative ml-auto h-full w-[80%] max-w-3xl bg-white/95 shadow-2xl transition-transform duration-300 ease-out">
                   <PlayerPool
                     players={poolPlayers}
                     collapsed={false}
@@ -553,7 +539,7 @@ export default function HomePage() {
                 </div>
               </div>
             )}
-            {isFullscreen && modalOpen && (
+            {modalOpen && (
               <AddPlayerModal onClose={() => setModalOpen(false)} onSubmit={handleAddPlayer} />
             )}
           </div>
@@ -571,42 +557,6 @@ export default function HomePage() {
           </DragOverlay>
         </DndContext>
       </div>
-      {!isFullscreen && (
-        <div
-          className={clsx(
-            "fixed inset-0 z-50 flex justify-end transition-all",
-            showPool ? "pointer-events-auto" : "pointer-events-none",
-          )}
-        >
-          <div
-            className={clsx(
-              "absolute inset-0 bg-slate-900/40 transition-opacity",
-              showPool ? "opacity-100" : "opacity-0",
-            )}
-            onClick={() => setShowPool(false)}
-          />
-          <div
-            className={clsx(
-              "relative z-10 h-full bg-white shadow-2xl transition-transform duration-300 ease-out w-[80vw] max-w-2xl",
-              showPool ? "translate-x-0" : "translate-x-full",
-            )}
-          >
-            <PlayerPool
-              players={poolPlayers}
-              collapsed={false}
-              onToggle={() => setShowPool(false)}
-              markedPlayerIds={markedPlayerIds}
-              onToggleMark={handleToggleMark}
-              assignedPlayerIds={Array.from(assignedPlayers)}
-              hideToggle
-              toggleLabel="Close"
-            />
-          </div>
-        </div>
-      )}
-      {modalOpen && !isFullscreen && (
-        <AddPlayerModal onClose={() => setModalOpen(false)} onSubmit={handleAddPlayer} />
-      )}
       {resetConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
           <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
