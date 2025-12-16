@@ -73,6 +73,7 @@ export const PlayerBadge = ({
           large ? "text-xl sm:text-3xl" : "text-sm sm:text-lg",
         )}
         dir="rtl"
+        style={{ textShadow: '-1px -1px 10px #000, 1px -1px 10px #000, -1px 1px 1px #000, 1px 1px 1px #000' }}
       >
         {player.name}
       </p>
