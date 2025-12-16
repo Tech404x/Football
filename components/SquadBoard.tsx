@@ -95,7 +95,8 @@ export const SquadBoard = ({
   );
 
   const pitchClass = clsx(
-    "relative w-full overflow-hidden",
+    "relative w-full",
+    !isFullscreen && "overflow-hidden",
     "bg-gradient-to-b from-[#1b7f3a] via-[#147033] to-[#0b4f23]",
     "before:absolute before:inset-0 before:bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.04)_0,rgba(255,255,255,0.04)_12px,transparent_12px,transparent_24px)] before:opacity-40 before:pointer-events-none",
     isFullscreen ? "min-h-[calc(100vh-100px)]" : isHorizontal ? "h-[45vh] sm:h-[35vh]" : "h-[70vh] sm:h-[55vh]",

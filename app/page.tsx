@@ -523,7 +523,7 @@ export default function HomePage() {
               />
             </div>
             {orientationConfirmOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
                 <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
                   <h2 className="mb-4 text-3xl font-extrabold text-emerald-900">
                     Switch to {isHorizontal ? "Vertical" : "Horizontal"} View?
@@ -552,7 +552,7 @@ export default function HomePage() {
               </div>
             )}
             {showPool && (
-              <div className="absolute inset-0 z-20 flex justify-end" style={{ paddingTop: "56px" }}>
+              <div className="absolute inset-x-0 bottom-0 top-24 md:top-28 z-40 flex justify-end">
                 <div
                   className="absolute inset-0 bg-emerald-900/40 transition-opacity"
                   onClick={() => setShowPool(false)}
@@ -574,6 +574,30 @@ export default function HomePage() {
             {modalOpen && (
               <AddPlayerModal onClose={() => setModalOpen(false)} onSubmit={handleAddPlayer} />
             )}
+            {resetConfirmOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
+                <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
+                  <h2 className="mb-4 text-3xl font-extrabold text-emerald-900">Reset Squad?</h2>
+                  <p className="mb-6 text-lg font-semibold text-emerald-800">
+                    You will lose the current formation and the board will be auto-filled again.
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                    <button
+                      onClick={() => setResetConfirmOpen(false)}
+                      className="rounded-full border border-emerald-300 px-6 py-3 text-emerald-700 font-semibold hover:bg-emerald-50"
+                    >
+                      Keep Current Formation
+                    </button>
+                    <button
+                      onClick={performReset}
+                      className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-emerald-500"
+                    >
+                      Yes, Reset Squad
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <DragOverlay dropAnimation={null}>
             {draggingPlayer ? (
@@ -589,30 +613,16 @@ export default function HomePage() {
           </DragOverlay>
         </DndContext>
       </div>
-      {resetConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
-            <h2 className="mb-4 text-3xl font-extrabold text-emerald-900">Reset Squad?</h2>
-            <p className="mb-6 text-lg font-semibold text-emerald-800">
-              You will lose the current formation and the board will be auto-filled again.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <button
-                onClick={() => setResetConfirmOpen(false)}
-                className="rounded-full border border-emerald-300 px-6 py-3 text-emerald-700 font-semibold hover:bg-emerald-50"
-              >
-                Keep Current Formation
-              </button>
-              <button
-                onClick={performReset}
-                className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-emerald-500"
-              >
-                Yes, Reset Squad
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
