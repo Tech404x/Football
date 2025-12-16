@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { DndContext, DragOverlay, PointerSensor, type DragEndEvent, type DragStartEvent, type DragOverEvent, useSensor, useSensors } from "@dnd-kit/core";
 import clsx from "clsx";
@@ -16,6 +16,8 @@ import {
   ArrowsPointingInIcon,
   ArrowsPointingOutIcon,
   ArrowUturnLeftIcon,
+  ArrowsRightLeftIcon,
+  ArrowsUpDownIcon,
 } from "@heroicons/react/24/solid";
 import { Shirt as ShirtIcon } from "lucide-react";
 import { mockPlayers, BASE_PLAYER_ID_SET } from "@/lib/mockPlayers";
@@ -108,10 +110,12 @@ export default function HomePage() {
   const [dragOriginSlotId, setDragOriginSlotId] = useState<string>();
   const [swapPreviewActive, setSwapPreviewActive] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [orientationConfirmOpen, setOrientationConfirmOpen] = useState(false);
   const [stateReady, setStateReady] = useState(false);
   const [absentMode, setAbsentMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [alternateJerseys, setAlternateJerseys] = useState(false);
+  const [isHorizontal, setIsHorizontal] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -161,6 +165,17 @@ export default function HomePage() {
     };
     document.addEventListener("fullscreenchange", handleChange);
     return () => document.removeEventListener("fullscreenchange", handleChange);
+  }, []);
+
+  useEffect(() => {
+    const updateOrientation = () => {
+      setIsHorizontal(window.innerWidth >= 1024);
+    };
+    if (typeof window !== "undefined") {
+      updateOrientation();
+      window.addEventListener("resize", updateOrientation);
+      return () => window.removeEventListener("resize", updateOrientation);
+    }
   }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -351,7 +366,7 @@ export default function HomePage() {
 
   const pitchWidthClass = clsx(
     "mx-auto w-full",
-    isFullscreen ? "max-w-5xl" : "max-w-4xl",
+    isFullscreen ? "max-w-5xl" : isHorizontal ? "max-w-6xl" : "max-w-4xl",
   );
 
   const handleMissPlayer = (playerId: string) => {
@@ -447,6 +462,17 @@ export default function HomePage() {
                       <ArrowPathIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                     <button
+                      onClick={() => setOrientationConfirmOpen(true)}
+                      aria-label="Toggle Pitch Orientation"
+                      className="text-white transition hover:text-emerald-200"
+                    >
+                      {isHorizontal ? (
+                        <ArrowsRightLeftIcon className="h-5 w-5" aria-hidden="true" />
+                      ) : (
+                        <ArrowsUpDownIcon className="h-5 w-5" aria-hidden="true" />
+                      )}
+                    </button>
+                    <button
                       onClick={handleResetRequest}
                       aria-label="Reset"
                       className="text-white transition hover:text-emerald-200"
@@ -493,27 +519,33 @@ export default function HomePage() {
                 alternateJerseys={alternateJerseys}
                 dragOriginSlotId={dragOriginSlotId}
                 showSwapPreview={swapPreviewActive}
+                isHorizontal={isHorizontal}
               />
             </div>
-            {resetConfirmOpen && (
+            {orientationConfirmOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/70 px-4">
                 <div className="w-full max-w-lg rounded-3xl bg-white p-6 text-center shadow-2xl">
-                  <h2 className="mb-4 text-3xl font-extrabold text-emerald-900">Reset Squad?</h2>
+                  <h2 className="mb-4 text-3xl font-extrabold text-emerald-900">
+                    Switch to {isHorizontal ? "Vertical" : "Horizontal"} View?
+                  </h2>
                   <p className="mb-6 text-lg font-semibold text-emerald-800">
-                    You will lose the current formation and the board will be auto-filled again.
+                    This will change the pitch orientation.
                   </p>
                   <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
                     <button
-                      onClick={() => setResetConfirmOpen(false)}
+                      onClick={() => setOrientationConfirmOpen(false)}
                       className="rounded-full border border-emerald-300 px-6 py-3 text-emerald-700 font-semibold hover:bg-emerald-50"
                     >
-                      Keep Current Formation
+                      Keep Current View
                     </button>
                     <button
-                      onClick={performReset}
+                      onClick={() => {
+                        setIsHorizontal((prev) => !prev);
+                        setOrientationConfirmOpen(false);
+                      }}
                       className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-emerald-500"
                     >
-                      Yes, Reset Squad
+                      Yes, Switch View
                     </button>
                   </div>
                 </div>

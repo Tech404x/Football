@@ -43,10 +43,10 @@ export const PlayerBadge = ({
   const jerseyClass = jerseyClasses[variant];
   const mismatchBorderClasses =
     mismatchLevel >= 2
-      ? "border-4 border-red-500 ring-4 ring-red-400/80 ring-offset-2 ring-offset-red-200/50"
+      ? "border-2 border-red-500 ring-2 ring-red-400/80 ring-offset-1 ring-offset-red-200/50"
       : mismatchLevel === 1
-        ? "border-4 border-yellow-400 ring-4 ring-yellow-300/80 ring-offset-2 ring-offset-yellow-100/70"
-        : "border-4 border-transparent";
+        ? "border-2 border-yellow-400 ring-2 ring-yellow-300/80 ring-offset-1 ring-offset-yellow-100/70"
+        : "border-2 border-transparent";
 
   return (
     <div
@@ -260,3 +260,4 @@ export const PositionSlot = ({
     </div>
   );
 };
+
