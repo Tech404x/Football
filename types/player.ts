@@ -7,4 +7,9 @@ export type Player = {
   preferredPosition: Position;
 };
 
+export type PlayerMatchStats = {
+  goals: number;
+  yellowCard: boolean;
+};
+
 export const POSITIONS: Position[] = ["DEF", "MID", "ATT"];

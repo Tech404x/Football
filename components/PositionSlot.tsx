@@ -2,9 +2,11 @@
 
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
+import Image from "next/image";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/solid";
+import type { ChangeEvent, MouseEvent } from "react";
 import { BASE_PLAYER_ID_SET } from "@/lib/mockPlayers";
-import type { Player, Position } from "@/types/player";
+import type { Player, PlayerMatchStats, Position } from "@/types/player";
 import type { SquadSlot, TeamId } from "@/types/squad";
 
 const jerseyClasses = {
@@ -23,6 +25,22 @@ const getPositionMismatchLevel = (slotPosition: Position, playerPosition: Positi
   return Math.abs(slotIndex - playerIndex);
 };
 
+const GoalIcon = () => (
+  <div className="relative h-4 w-4 sm:h-5 sm:w-5 drop-shadow rounded-full bg-white/80 p-[2px] sm:p-[3px]">
+    <Image src="/goal-ball.svg" alt="Goal scored" fill sizes="20px" priority className="object-contain" />
+  </div>
+);
+
+const CardIcon = ({ active = true }: { active?: boolean }) => (
+  <span
+    className={clsx(
+      "block h-4 w-3 rounded-[2px] border border-yellow-700 bg-yellow-300 shadow transition sm:h-5 sm:w-4",
+      !active && "opacity-40",
+    )}
+    title="Yellow card"
+  />
+);
+
 export const PlayerBadge = ({
   player,
   teamId,
@@ -30,6 +48,7 @@ export const PlayerBadge = ({
   alternate,
   mismatchLevel = 0,
   isCustom,
+  stats,
 }: {
   player: Player;
   teamId: TeamId;
@@ -37,6 +56,7 @@ export const PlayerBadge = ({
   alternate?: boolean;
   mismatchLevel?: number;
   isCustom?: boolean;
+  stats?: PlayerMatchStats;
 }) => {
   const isTeamALight = alternate ? teamId === "team-b" : teamId === "team-a";
   const variant = isTeamALight ? "light" : "dark";
@@ -48,6 +68,8 @@ export const PlayerBadge = ({
         ? "border-2 border-yellow-400 ring-2 ring-yellow-300/80 ring-offset-1 ring-offset-yellow-100/70"
         : "border-2 border-transparent";
 
+  const hasStats = Boolean(stats && (stats.goals > 0 || stats.yellowCard));
+
   return (
     <div
       className={clsx(
@@ -55,17 +77,37 @@ export const PlayerBadge = ({
         isCustom && "rounded-3xl border border-sky-300/80 bg-sky-50/40 px-1 py-1",
       )}
     >
-      <div
-        className={clsx(
-          "flex items-center justify-center rounded-xl sm:rounded-2xl font-bold uppercase shadow-lg",
-          large
-            ? "h-9 w-9 sm:h-14 sm:w-14 text-[10px] sm:text-sm"
-            : "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
-          jerseyClass,
-          mismatchBorderClasses,
-        )}
-      >
-        {player.preferredPosition}
+      <div className="relative flex items-center justify-center">
+        <div
+          className={clsx(
+            "flex items-center justify-center rounded-xl sm:rounded-2xl font-bold uppercase shadow-lg",
+            large
+              ? "h-9 w-9 sm:h-14 sm:w-14 text-[10px] sm:text-sm"
+              : "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
+            jerseyClass,
+            mismatchBorderClasses,
+          )}
+        >
+          {player.preferredPosition}
+        </div>
+        {hasStats && stats ? (
+          <>
+            <div className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1 text-[10px] sm:text-xs">
+              {stats.goals > 0 &&
+                Array.from({ length: Math.min(stats.goals, 5) }).map((_, index) => (
+                  <GoalIcon key={index} />
+                ))}
+              {stats.goals > 5 && (
+                <span className="text-xs font-bold text-white sm:text-sm">+{stats.goals - 5}</span>
+              )}
+              {stats.yellowCard && (
+                <div className="pl-1">
+                  <CardIcon />
+                </div>
+              )}
+            </div>
+          </>
+        ) : null}
       </div>
       <p
         className={clsx(
@@ -91,6 +133,8 @@ const SlotPlayer = ({
   onRemovePlayer,
   large,
   alternate,
+  stats,
+  onUpdatePlayerStats,
 }: {
   player: Player;
   slot: SquadSlot;
@@ -101,6 +145,8 @@ const SlotPlayer = ({
   onRemovePlayer?: (playerId: string) => void;
   large?: boolean;
   alternate?: boolean;
+  stats?: PlayerMatchStats;
+  onUpdatePlayerStats: (playerId: string, updates: Partial<PlayerMatchStats>) => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: player.id,
@@ -120,13 +166,13 @@ const SlotPlayer = ({
     setActiveMenuPlayerId(null);
   };
 
-  const handleRemoveClick = (event: React.MouseEvent) => {
+  const handleRemoveClick = (event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     (onRemovePlayer ?? onMissPlayer)(player.id);
     setActiveMenuPlayerId(null);
   };
 
-  const handleClick = (event: React.MouseEvent) => {
+  const handleClick = (event: MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
     if (showRemoveControl) {
       handleRemoveClick(event);
@@ -137,6 +183,15 @@ const SlotPlayer = ({
 
   const mismatchLevel = getPositionMismatchLevel(slot.position, player.preferredPosition);
   const isCustomPlayer = !BASE_PLAYER_ID_SET.has(player.id);
+
+  const handleGoalChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const nextGoals = Number(event.target.value);
+    onUpdatePlayerStats(player.id, { goals: nextGoals });
+  };
+
+  const toggleYellowCard = () => {
+    onUpdatePlayerStats(player.id, { yellowCard: !stats?.yellowCard });
+  };
 
   return (
     <div className="relative">
@@ -155,6 +210,7 @@ const SlotPlayer = ({
           alternate={alternate}
           mismatchLevel={mismatchLevel}
           isCustom={isCustomPlayer}
+          stats={stats}
         />
       </div>
       {showRemoveControl && (
@@ -166,10 +222,46 @@ const SlotPlayer = ({
         </button>
       )}
       {showMenu && (
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10">
+        <div
+          className="absolute top-full left-1/2 z-10 mt-1 w-36 -translate-x-1/2 transform rounded-xl border border-gray-200 bg-white p-2 text-xs shadow-xl"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="mb-2 flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-slate-600">Goals</label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">⚽</span>
+              <select
+                value={stats?.goals ?? 0}
+                onChange={handleGoalChange}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1 pl-6 pr-2 text-xs font-semibold text-slate-800"
+              >
+                {[0, 1, 2, 3, 4, 5].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-600">Cards</span>
+            <div className="flex gap-2">
+              <button
+                onClick={toggleYellowCard}
+                className={clsx(
+                  "rounded-md border border-slate-200 bg-white p-1 shadow-sm transition hover:scale-105",
+                  stats?.yellowCard && "ring-2 ring-yellow-400",
+                )}
+                aria-pressed={Boolean(stats?.yellowCard)}
+                aria-label="Toggle yellow card"
+              >
+                <CardIcon active={Boolean(stats?.yellowCard)} />
+              </button>
+            </div>
+          </div>
           <button
             onClick={handleMiss}
-            className="block w-full px-2 py-1 text-left text-xs bg-red-600 text-white hover:bg-red-700"
+            className="mt-1 block w-full rounded-lg bg-red-600 px-2 py-1 text-center text-[11px] font-semibold text-white hover:bg-red-700"
           >
             Absent
           </button>
@@ -191,6 +283,8 @@ export type PositionSlotProps = {
   alternate?: boolean;
   isOriginSlot?: boolean;
   showSwapPreview?: boolean;
+  statsByPlayerId: Record<string, PlayerMatchStats | undefined>;
+  onUpdatePlayerStats: (playerId: string, updates: Partial<PlayerMatchStats>) => void;
 };
 
 export const PositionSlot = ({
@@ -205,6 +299,8 @@ export const PositionSlot = ({
   alternate,
   isOriginSlot,
   showSwapPreview,
+  statsByPlayerId,
+  onUpdatePlayerStats,
 }: PositionSlotProps) => {
   const { isOver, setNodeRef } = useDroppable({
     id: slot.id,
@@ -241,6 +337,8 @@ export const PositionSlot = ({
             onRemovePlayer={onRemovePlayer}
             large={large}
             alternate={alternate}
+            stats={statsByPlayerId[player.id]}
+            onUpdatePlayerStats={onUpdatePlayerStats}
           />
           {showSwapPreview && isOver && player && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -261,4 +359,3 @@ export const PositionSlot = ({
     </div>
   );
 };
-

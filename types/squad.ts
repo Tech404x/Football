@@ -1,4 +1,4 @@
-import type { Player, Position } from "./player";
+import type { Player, PlayerMatchStats, Position } from "./player";
 
 export type TeamId = "team-a" | "team-b";
 
@@ -23,4 +23,5 @@ export type PersistedSquadState = {
   assignments: AssignmentMap;
   showPool: boolean;
   markedPlayerIds: string[];
+  playerStats?: Record<string, PlayerMatchStats | undefined>;
 };

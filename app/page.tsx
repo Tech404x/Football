@@ -30,7 +30,7 @@ import {
 } from "@/lib/squadLogic";
 import { FORMATION_SLOTS } from "@/lib/squadLogic";
 import { loadState, saveState } from "@/lib/storage";
-import type { Player } from "@/types/player";
+import type { Player, PlayerMatchStats } from "@/types/player";
 import type { AssignmentMap, SquadSlot, TeamId } from "@/types/squad";
 
 const FORMATION_SLOT_MAP = FORMATION_SLOTS.reduce<Record<string, SquadSlot>>((acc, slot) => {
@@ -116,6 +116,7 @@ export default function HomePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [alternateJerseys, setAlternateJerseys] = useState(false);
   const [isHorizontal, setIsHorizontal] = useState(false);
+  const [playerStats, setPlayerStats] = useState<Record<string, PlayerMatchStats | undefined>>({});
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -125,6 +126,7 @@ export default function HomePage() {
       setAssignments(ensureAssignmentsIntegrity(stored.players, stored.assignments));
       setShowPool(false);
       setMarkedPlayerIds(stored.markedPlayerIds ?? []);
+      setPlayerStats(stored.playerStats ?? {});
     } else {
       const activePlayerIds = getDefaultActivePlayerIds(mockPlayers);
       setMarkedPlayerIds(activePlayerIds);
@@ -145,8 +147,9 @@ export default function HomePage() {
       assignments,
       showPool,
       markedPlayerIds,
+      playerStats,
     });
-  }, [players, assignments, showPool, markedPlayerIds, stateReady]);
+  }, [players, assignments, showPool, markedPlayerIds, playerStats, stateReady]);
 
   useEffect(() => {
     if (!lastSavedMessage) {
@@ -208,6 +211,24 @@ export default function HomePage() {
     });
     return counts;
   }, [assignments]);
+
+  const teamGoals = useMemo(() => {
+    const totals: Record<TeamId, number> = { "team-a": 0, "team-b": 0 };
+    Object.entries(assignments).forEach(([slotId, playerId]) => {
+      if (!playerId) {
+        return;
+      }
+      const slot = FORMATION_SLOT_MAP[slotId];
+      if (!slot) {
+        return;
+      }
+      const stats = playerStats[playerId];
+      if (stats?.goals) {
+        totals[slot.teamId] += stats.goals;
+      }
+    });
+    return totals;
+  }, [assignments, playerStats]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const playerId = event.active?.data?.current?.playerId as string | undefined;
@@ -278,6 +299,7 @@ export default function HomePage() {
     const shuffledPlayers = shufflePlayers(nextMarkedPlayers);
     const autoAssignments = autoAssignPlayers(shuffledPlayers, undefined, { allowRebalanceWhenAllAssigned: true });
     setAssignments(autoAssignments);
+    setPlayerStats({});
     setLastSavedMessage("Squad reset and auto-filled");
     setResetConfirmOpen(false);
   };
@@ -351,6 +373,14 @@ export default function HomePage() {
     setMarkedPlayerIds((prev) => {
       if (prev.includes(playerId)) {
         setAssignments((current) => removePlayerFromAssignments(playerId, current));
+        setPlayerStats((stats) => {
+          if (!stats[playerId]) {
+            return stats;
+          }
+          const next = { ...stats };
+          delete next[playerId];
+          return next;
+        });
         return prev.filter((id) => id !== playerId);
       }
       if (player) {
@@ -411,6 +441,30 @@ export default function HomePage() {
       return next;
     });
     setMarkedPlayerIds((prev) => prev.filter((id) => id !== playerId));
+    setPlayerStats((stats) => {
+      if (!stats[playerId]) {
+        return stats;
+      }
+      const next = { ...stats };
+      delete next[playerId];
+      return next;
+    });
+  };
+
+  const handleUpdatePlayerStats = (playerId: string, updates: Partial<PlayerMatchStats>) => {
+    setPlayerStats((prev) => {
+      const current: PlayerMatchStats = prev[playerId] ?? { goals: 0, yellowCard: false };
+      const next: PlayerMatchStats = { ...current, ...updates };
+      if (next.goals === 0 && !next.yellowCard) {
+        if (!prev[playerId]) {
+          return prev;
+        }
+        const trimmed = { ...prev };
+        delete trimmed[playerId];
+        return trimmed;
+      }
+      return { ...prev, [playerId]: next };
+    });
   };
 
   return (
@@ -487,14 +541,46 @@ export default function HomePage() {
                       <PlusIcon className="h-5 w-5" aria-hidden="true" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-3 text-sm font-semibold text-white">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-900 bg-white text-emerald-900 font-bold">
-                      {teamCounts[alternateJerseys ? 'team-b' : 'team-a']}
-                    </span>
-                    <span className="text-white/70">vs</span>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white bg-black text-white font-bold">
-                      {teamCounts[alternateJerseys ? 'team-a' : 'team-b']}
-                    </span>
+                  <div className="flex flex-col items-center gap-2 text-sm font-semibold text-white sm:flex-row sm:items-center sm:gap-4">
+                    {(() => {
+                      const leftTeamId: TeamId = alternateJerseys ? "team-b" : "team-a";
+                      const rightTeamId: TeamId = alternateJerseys ? "team-a" : "team-b";
+                      return (
+                        <div className="flex w-full flex-col items-center gap-2 sm:w-auto">
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-900 bg-white text-emerald-900 font-bold">
+                                {teamCounts[leftTeamId]}
+                              </span>
+                              <span className="text-[10px] uppercase tracking-wide text-white/70">Goals x{teamGoals[leftTeamId]}</span>
+                            </div>
+                            <span className="text-white/70">vs</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white bg-black text-white font-bold">
+                                {teamCounts[rightTeamId]}
+                              </span>
+                              <span className="text-[10px] uppercase tracking-wide text-white/70">Goals x{teamGoals[rightTeamId]}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-center gap-2 text-base font-bold sm:justify-start sm:text-lg">
+                            {(() => {
+                              const leftGoals = teamGoals[leftTeamId];
+                              const rightGoals = teamGoals[rightTeamId];
+                              const diff = Math.abs(leftGoals - rightGoals);
+                              const leftScore = leftGoals >= rightGoals ? diff : 0;
+                              const rightScore = rightGoals >= leftGoals ? diff : 0;
+                              return (
+                                <>
+                                  <span>{leftScore}</span>
+                                  <span className="text-white/60">-</span>
+                                  <span>{rightScore}</span>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <button
                     onClick={handleToggleFullscreen}
@@ -520,6 +606,8 @@ export default function HomePage() {
                 dragOriginSlotId={dragOriginSlotId}
                 showSwapPreview={swapPreviewActive}
                 isHorizontal={isHorizontal}
+                playerStats={playerStats}
+                onUpdatePlayerStats={handleUpdatePlayerStats}
               />
             </div>
             {orientationConfirmOpen && (
@@ -617,12 +705,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-
-
-
-
-
-
-
-

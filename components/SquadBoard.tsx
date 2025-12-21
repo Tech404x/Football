@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import type { Player, Position } from "@/types/player";
+import type { Player, PlayerMatchStats, Position } from "@/types/player";
 import type { AssignmentMap, SquadSlot, TeamId } from "@/types/squad";
 import { PositionSlot } from "./PositionSlot";
 
@@ -30,6 +30,8 @@ export type SquadBoardProps = {
   dragOriginSlotId?: string;
   showSwapPreview?: boolean;
   isHorizontal?: boolean;
+  playerStats: Record<string, PlayerMatchStats | undefined>;
+  onUpdatePlayerStats: (playerId: string, updates: Partial<PlayerMatchStats>) => void;
 };
 
 export const SquadBoard = ({
@@ -44,6 +46,8 @@ export const SquadBoard = ({
   dragOriginSlotId,
   showSwapPreview,
   isHorizontal,
+  playerStats,
+  onUpdatePlayerStats,
 }: SquadBoardProps) => {
   const [activeMenuPlayerId, setActiveMenuPlayerId] = useState<string | null>(null);
   const slotMap = useMemo(() => {
@@ -194,6 +198,8 @@ export const SquadBoard = ({
                                 alternate={alternateJerseys}
                                 isOriginSlot={slot.id === dragOriginSlotId}
                                 showSwapPreview={showSwapPreview}
+                                statsByPlayerId={playerStats}
+                                onUpdatePlayerStats={onUpdatePlayerStats}
                               />
                             );
                           })}
@@ -243,6 +249,8 @@ export const SquadBoard = ({
                                 alternate={alternateJerseys}
                                 isOriginSlot={slot.id === dragOriginSlotId}
                                 showSwapPreview={showSwapPreview}
+                                statsByPlayerId={playerStats}
+                                onUpdatePlayerStats={onUpdatePlayerStats}
                               />
                             );
                           })}
@@ -259,7 +267,6 @@ export const SquadBoard = ({
     </section>
   );
 };
-
 
 
 
