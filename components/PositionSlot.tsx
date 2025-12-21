@@ -25,8 +25,20 @@ const getPositionMismatchLevel = (slotPosition: Position, playerPosition: Positi
   return Math.abs(slotIndex - playerIndex);
 };
 
-const GoalIcon = () => (
-  <div className="relative h-4 w-4 sm:h-5 sm:w-5 drop-shadow rounded-full bg-white/80 p-[2px] sm:p-[3px]">
+const GoalIcon = ({
+  variant = "default",
+  sizeClass = "h-4 w-4 sm:h-5 sm:w-5",
+}: {
+  variant?: "default" | "opposite";
+  sizeClass?: string;
+}) => (
+  <div
+    className={clsx(
+      "relative drop-shadow rounded-full p-[2px] sm:p-[3px]",
+      sizeClass,
+      variant === "opposite" ? "bg-red-600/90" : "bg-white/80",
+    )}
+  >
     <Image src="/goal-ball.svg" alt="Goal scored" fill sizes="20px" priority className="object-contain" />
   </div>
 );
@@ -68,7 +80,9 @@ export const PlayerBadge = ({
         ? "border-2 border-yellow-400 ring-2 ring-yellow-300/80 ring-offset-1 ring-offset-yellow-100/70"
         : "border-2 border-transparent";
 
-  const hasStats = Boolean(stats && (stats.goals > 0 || stats.yellowCard));
+  const positiveGoals = stats?.goals ?? 0;
+  const oppositeGoals = stats?.oppositeGoals ?? 0;
+  const hasStats = Boolean(stats && (positiveGoals > 0 || oppositeGoals > 0 || stats.yellowCard));
 
   return (
     <div
@@ -93,12 +107,22 @@ export const PlayerBadge = ({
         {hasStats && stats ? (
           <>
             <div className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1 text-[10px] sm:text-xs">
-              {stats.goals > 0 &&
-                Array.from({ length: Math.min(stats.goals, 5) }).map((_, index) => (
-                  <GoalIcon key={index} />
+              {positiveGoals > 0 &&
+                Array.from({ length: Math.min(positiveGoals, 5) }).map((_, index) => (
+                  <GoalIcon key={`goal-${index}`} />
                 ))}
-              {stats.goals > 5 && (
-                <span className="text-xs font-bold text-white sm:text-sm">+{stats.goals - 5}</span>
+              {positiveGoals > 5 && (
+                <span className="text-xs font-bold text-white sm:text-sm">+{positiveGoals - 5}</span>
+              )}
+              {oppositeGoals > 0 && (
+                <div className="flex items-center gap-1 pl-1">
+                  {Array.from({ length: Math.min(oppositeGoals, 5) }).map((_, index) => (
+                    <GoalIcon key={`opp-goal-${index}`} variant="opposite" />
+                  ))}
+                  {oppositeGoals > 5 && (
+                    <span className="text-xs font-bold text-white sm:text-sm">+{oppositeGoals - 5}</span>
+                  )}
+                </div>
               )}
               {stats.yellowCard && (
                 <div className="pl-1">
@@ -196,9 +220,17 @@ const SlotPlayer = ({
     onUpdatePlayerStats(player.id, { goals: nextGoals });
   };
 
+  const handleOppositeGoalChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const nextGoals = Number(event.target.value);
+    onUpdatePlayerStats(player.id, { oppositeGoals: nextGoals });
+  };
+
   const toggleYellowCard = () => {
     onUpdatePlayerStats(player.id, { yellowCard: !stats?.yellowCard });
   };
+
+  const goalSelectorValue = stats?.goals ?? 0;
+  const oppositeGoalSelectorValue = stats?.oppositeGoals ?? 0;
 
   useEffect(() => {
     if (!showMenu) {
@@ -211,7 +243,7 @@ const SlotPlayer = ({
       }
       const rect = node.getBoundingClientRect();
       const menuWidth = 160;
-      const menuHeight = 140;
+      const menuHeight = 175;
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const centerX = rect.left + rect.width / 2;
@@ -278,9 +310,28 @@ const SlotPlayer = ({
             <div className="relative">
               <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">⚽</span>
               <select
-                value={stats?.goals ?? 0}
+                value={goalSelectorValue}
                 onChange={handleGoalChange}
                 className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1 pl-6 pr-2 text-xs font-semibold text-slate-800"
+              >
+                {[0, 1, 2, 3, 4, 5].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="mb-2 flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-red-600">opposite goals</label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+                <GoalIcon variant="opposite" sizeClass="h-3 w-3" />
+              </span>
+              <select
+                value={oppositeGoalSelectorValue}
+                onChange={handleOppositeGoalChange}
+                className="w-full rounded-lg border border-red-200 bg-red-50 py-1 pl-7 pr-2 text-xs font-semibold text-red-700"
               >
                 {[0, 1, 2, 3, 4, 5].map((value) => (
                   <option key={value} value={value}>

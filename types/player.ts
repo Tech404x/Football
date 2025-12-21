@@ -9,6 +9,7 @@ export type Player = {
 
 export type PlayerMatchStats = {
   goals: number;
+  oppositeGoals: number;
   yellowCard: boolean;
 };
 

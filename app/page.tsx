@@ -223,8 +223,14 @@ export default function HomePage() {
         return;
       }
       const stats = playerStats[playerId];
-      if (stats?.goals) {
-        totals[slot.teamId] += stats.goals;
+      const normalGoals = stats?.goals ?? 0;
+      const oppositeGoals = stats?.oppositeGoals ?? 0;
+      if (normalGoals > 0) {
+        totals[slot.teamId] += normalGoals;
+      }
+      if (oppositeGoals > 0) {
+        const oppositeTeam: TeamId = slot.teamId === "team-a" ? "team-b" : "team-a";
+        totals[oppositeTeam] += oppositeGoals;
       }
     });
     return totals;
@@ -453,9 +459,9 @@ export default function HomePage() {
 
   const handleUpdatePlayerStats = (playerId: string, updates: Partial<PlayerMatchStats>) => {
     setPlayerStats((prev) => {
-      const current: PlayerMatchStats = prev[playerId] ?? { goals: 0, yellowCard: false };
+      const current: PlayerMatchStats = prev[playerId] ?? { goals: 0, oppositeGoals: 0, yellowCard: false };
       const next: PlayerMatchStats = { ...current, ...updates };
-      if (next.goals === 0 && !next.yellowCard) {
+      if (next.goals === 0 && next.oppositeGoals === 0 && !next.yellowCard) {
         if (!prev[playerId]) {
           return prev;
         }
@@ -476,7 +482,7 @@ export default function HomePage() {
               <div
                 className={clsx(
                   isFullscreen ? "sticky top-0" : "relative",
-                  "z-30 bg-emerald-900/90 py-3 shadow-lg",
+                  isFullscreen && !isHorizontal ? "z-30 bg-emerald-900/90 py-1 shadow-lg" : "z-30 bg-emerald-900/90 py-3 shadow-lg",
                 )}
               >
                 <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 px-4 text-white">
