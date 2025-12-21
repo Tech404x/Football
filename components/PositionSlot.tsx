@@ -4,7 +4,7 @@ import { useDroppable, useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
 import Image from "next/image";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/solid";
-import type { ChangeEvent, MouseEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
 import { BASE_PLAYER_ID_SET } from "@/lib/mockPlayers";
 import type { Player, PlayerMatchStats, Position } from "@/types/player";
 import type { SquadSlot, TeamId } from "@/types/squad";
@@ -148,10 +148,17 @@ const SlotPlayer = ({
   stats?: PlayerMatchStats;
   onUpdatePlayerStats: (playerId: string, updates: Partial<PlayerMatchStats>) => void;
 }) => {
+  const [menuAlignment, setMenuAlignment] = useState<"center" | "left" | "right">("center");
+  const [menuVertical, setMenuVertical] = useState<"below" | "above">("below");
+  const badgeRef = useRef<HTMLDivElement | null>(null);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: player.id,
     data: { type: "player", playerId: player.id },
   });
+  const setRefs = (node: HTMLDivElement | null) => {
+    badgeRef.current = node;
+    setNodeRef(node);
+  };
 
   const style = transform
     ? {
@@ -193,10 +200,44 @@ const SlotPlayer = ({
     onUpdatePlayerStats(player.id, { yellowCard: !stats?.yellowCard });
   };
 
+  useEffect(() => {
+    if (!showMenu) {
+      return;
+    }
+    const updateAlignment = () => {
+      const node = badgeRef.current;
+      if (!node || typeof window === "undefined") {
+        return;
+      }
+      const rect = node.getBoundingClientRect();
+      const menuWidth = 160;
+      const menuHeight = 140;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const centerX = rect.left + rect.width / 2;
+      const padding = 16;
+      if (centerX - menuWidth / 2 < padding) {
+        setMenuAlignment("left");
+      } else if (centerX + menuWidth / 2 > viewportWidth - padding) {
+        setMenuAlignment("right");
+      } else {
+        setMenuAlignment("center");
+      }
+      if (rect.bottom + menuHeight > viewportHeight - padding) {
+        setMenuVertical("above");
+      } else {
+        setMenuVertical("below");
+      }
+    };
+    updateAlignment();
+    window.addEventListener("resize", updateAlignment);
+    return () => window.removeEventListener("resize", updateAlignment);
+  }, [showMenu]);
+
   return (
     <div className="relative">
       <div
-        ref={setNodeRef}
+        ref={setRefs}
         style={style}
         {...listeners}
         {...attributes}
@@ -223,7 +264,13 @@ const SlotPlayer = ({
       )}
       {showMenu && (
         <div
-          className="absolute top-full left-1/2 z-10 mt-1 w-36 -translate-x-1/2 transform rounded-xl border border-gray-200 bg-white p-2 text-xs shadow-xl"
+          className={clsx(
+            "absolute z-10 w-36 transform rounded-xl border border-gray-200 bg-white p-2 text-xs shadow-xl",
+            menuVertical === "below" ? "top-full mt-1 origin-top" : "bottom-full mb-1 origin-bottom",
+            menuAlignment === "left" && "left-0 -translate-x-0",
+            menuAlignment === "right" && "right-0 translate-x-0",
+            menuAlignment === "center" && "left-1/2 -translate-x-1/2",
+          )}
           onClick={(event) => event.stopPropagation()}
         >
           <div className="mb-2 flex flex-col gap-1">
