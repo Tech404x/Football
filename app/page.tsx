@@ -693,18 +693,6 @@ export default function HomePage() {
               </div>
             )}
           </div>
-          <DragOverlay dropAnimation={null}>
-            {draggingPlayer ? (
-              <div className="w-32 rounded-3xl bg-emerald-900/70 px-3 py-2">
-                <PlayerBadge
-                  player={draggingPlayer}
-                  teamId="team-a"
-                  alternate={alternateJerseys}
-                  isCustom={!BASE_PLAYER_ID_SET.has(draggingPlayer.id)}
-                />
-              </div>
-            ) : null}
-          </DragOverlay>
         </DndContext>
       </div>
 
