@@ -36,37 +36,37 @@ export const AddPlayerModal = ({ onClose, onSubmit }: AddPlayerModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-        <header className="mb-4 flex items-center justify-between">
+    <div className="modal-scrim">
+      <div className="modal-panel w-full max-w-md p-6">
+        <header className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Add Player</p>
-            <h3 className="text-xl font-semibold text-slate-900">New teammate</h3>
+            <p className="panel-kicker text-black/50">Add Player</p>
+            <h3 className="mt-1 text-2xl font-black text-[var(--color-ink)]">New teammate</h3>
           </div>
-          <button onClick={handleClose} className="text-sm text-slate-500 hover:text-slate-800">
+          <button onClick={handleClose} className="btn-secondary min-h-0 px-3 py-2 text-sm">
             Close
           </button>
         </header>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
+          <label className="flex flex-col gap-1.5 text-sm font-bold text-[var(--color-ink)]">
             Full name
             <input
               type="text"
               value={form.name}
               onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-              className="rounded-2xl border border-slate-200 px-4 py-2.5 text-base"
+              className="field-input"
               placeholder="Player name"
               required
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
+          <label className="flex flex-col gap-1.5 text-sm font-bold text-[var(--color-ink)]">
             Preferred position
             <select
               value={form.preferredPosition}
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, preferredPosition: event.target.value as Position }))
               }
-              className="rounded-2xl border border-slate-200 px-4 py-2.5 text-base"
+              className="field-input"
             >
               {POSITIONS.map((position) => (
                 <option key={position} value={position}>
@@ -77,7 +77,7 @@ export const AddPlayerModal = ({ onClose, onSubmit }: AddPlayerModalProps) => {
           </label>
           <button
             type="submit"
-            className="rounded-2xl bg-emerald-600 py-3 text-base font-semibold text-white shadow-lg hover:bg-emerald-500"
+            className="btn-primary mt-1"
           >
             Save Player
           </button>

@@ -1,20 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Soccer Squad Selector",
-  description: "Drag & drop lineups, auto fill formations, and save squads locally.",
+  title: "Kooraa Squad Board",
+  description: "Build balanced football lineups, track match events, and keep squads saved locally.",
 };
 
 export default function RootLayout({
@@ -24,7 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 text-slate-900`}>
+      <body>
         {children}
       </body>
     </html>

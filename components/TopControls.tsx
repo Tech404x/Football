@@ -47,10 +47,10 @@ const ControlButton = ({
     disabled={disabled}
     aria-label={srLabel}
     className={clsx(
-      "flex h-10 w-10 items-center justify-center rounded-full text-sm transition",
+      "flex h-11 w-11 items-center justify-center rounded-lg text-sm font-black transition",
       variant === "primary"
-        ? "bg-emerald-600 text-white shadow-lg hover:bg-emerald-500 disabled:bg-emerald-300"
-        : "border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:text-emerald-300",
+        ? "bg-[var(--color-amber)] text-[var(--color-night)] shadow-lg hover:-translate-y-0.5 disabled:bg-black/10 disabled:text-black/30"
+        : "border border-[var(--color-line)] text-[var(--color-ink)] hover:-translate-y-0.5 hover:border-[var(--color-amber)] disabled:text-black/30",
     )}
   >
     <span aria-hidden="true" className="h-5 w-5">
@@ -74,9 +74,10 @@ export const TopControls = ({
   isRegenerateDisabled,
 }: TopControlsProps) => {
   return (
-    <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-white/80 p-4 shadow">
+    <section className="modal-panel flex flex-wrap items-center justify-between gap-4 p-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900 mx-auto text-center">Squad Selector</h1>
+        <p className="panel-kicker text-black/50">Kooraa match board</p>
+        <h1 className="text-2xl font-black text-[var(--color-ink)] mx-auto text-center">Squad Selector</h1>
       </div>
       <div className="flex flex-col items-end gap-3">
         <div className="flex flex-wrap justify-end gap-2 items-center">

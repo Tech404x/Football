@@ -99,39 +99,29 @@ export const SquadBoard = ({
   );
 
   const pitchClass = clsx(
-    "relative w-full",
+    "pitch-surface isolate relative w-full",
     !isFullscreen && "overflow-hidden",
-    "bg-gradient-to-b from-[#1b7f3a] via-[#147033] to-[#0b4f23]",
-    "before:absolute before:inset-0 before:bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.04)_0,rgba(255,255,255,0.04)_12px,transparent_12px,transparent_24px)] before:opacity-40 before:pointer-events-none",
-    isFullscreen ? "min-h-[calc(100vh-100px)]" : isHorizontal ? "h-[45vh] sm:h-[35vh]" : "h-[70vh] sm:h-[55vh]",
+    "bg-[linear-gradient(180deg,var(--color-pitch-light),var(--color-pitch)_48%,var(--color-pitch-dark))]",
+    isFullscreen ? "min-h-[calc(100vh-96px)]" : isHorizontal ? "h-[52vh] min-h-[440px] sm:h-[48vh]" : "h-[78vh] min-h-[680px] sm:h-[66vh]",
   );
 
   return (
-    <section className="flex flex-col gap-4 sm:gap-5" onClick={() => setActiveMenuPlayerId(null)}>
-      {!isFullscreen && (
-        <header className="flex flex-wrap items-center justify-between gap-4 px-4 sm:px-0">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-50/80">Squad Board</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm" />
-        </header>
-      )}
-      
+    <section className="flex flex-col gap-3" onClick={() => setActiveMenuPlayerId(null)}>
       {/* Mobile-first pitch: full-width on mobile, constrained on larger screens */}
       <div className={fieldContainerClass}>
         <div className={pitchClass}>
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-1 sm:inset-2 rounded-2xl border-2 border-white/40"></div>
+          <div className="pointer-events-none absolute inset-0 z-0">
+            <div className="absolute inset-1 sm:inset-2 rounded-xl border-2 border-white/55"></div>
             <div
               className={clsx(
                 "absolute",
                 isHorizontal
                   ? "inset-y-4 sm:inset-y-6 left-1/2 w-0.5 sm:w-1 border-l"
                   : "inset-x-4 sm:inset-x-6 top-1/2 h-0.5 sm:h-1 border-t",
-                "border-white/60"
+                "border-white/65"
               )}
             ></div>
-            <div className="absolute left-1/2 top-1/2 h-16 w-16 sm:h-24 sm:w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 sm:border-4 border-white/60"></div>
+            <div className="absolute left-1/2 top-1/2 h-16 w-16 sm:h-24 sm:w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 sm:border-4 border-white/65"></div>
             <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
             <div className="absolute inset-0">
               {["home", "away"].map((side) => (
@@ -148,7 +138,7 @@ export const SquadBoard = ({
                         : "bottom-1 left-1/2 -translate-x-1/2 w-32 sm:w-40 h-10 sm:h-14"
                   )}
                 >
-                  <div className="relative h-full w-full rounded-md border-[3px] border-white/90 bg-gradient-to-br from-white/40 to-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+                  <div className="relative h-full w-full rounded-md border-[3px] border-white/90 bg-gradient-to-br from-white/35 to-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
                     <div className="absolute inset-[3px] rounded-sm border border-white/70"></div>
                     <div className="absolute inset-[5px] rounded-sm opacity-80 bg-[linear-gradient(90deg,rgba(255,255,255,0.45)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.45)_1px,transparent_1px)] bg-[length:8px_8px]"></div>
                     <div className="absolute inset-y-2 left-2 w-1 bg-white/50 blur-[1px]"></div>
@@ -159,14 +149,14 @@ export const SquadBoard = ({
             </div>
           </div>
           {/* Team positioning on football field */}
-          <div className="absolute inset-1 sm:inset-2 z-10">
+          <div className="absolute inset-1 z-20 sm:inset-2">
             {/* Team A (White) */}
             {teamIds.includes("team-a") && (() => {
               const teamASlots = slots.filter((slot) => slot.teamId === "team-a");
               return (
                 <div
                   className={clsx(
-                    "absolute flex px-4",
+                    "absolute flex px-3 sm:px-4",
                     isHorizontal
                       ? "left-0 top-0 bottom-0 w-1/2 flex-row justify-center gap-6 sm:gap-10"
                       : "top-0 left-0 right-0 h-1/2 flex-col justify-evenly"
@@ -217,7 +207,7 @@ export const SquadBoard = ({
               return (
                 <div
                   className={clsx(
-                    "absolute flex px-4",
+                    "absolute flex px-3 sm:px-4",
                     isHorizontal
                       ? "right-0 top-0 bottom-0 w-1/2 flex-row justify-center gap-6 sm:gap-10"
                       : "bottom-0 left-0 right-0 h-1/2 flex-col justify-evenly"

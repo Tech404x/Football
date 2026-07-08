@@ -10,8 +10,8 @@ import type { Player, PlayerMatchStats, Position } from "@/types/player";
 import type { SquadSlot, TeamId } from "@/types/squad";
 
 const jerseyClasses = {
-  light: "bg-white text-emerald-700",
-  dark: "bg-slate-900 text-white",
+  light: "bg-[var(--color-chalk)] text-[var(--color-pitch-dark)]",
+  dark: "bg-[#070b12] text-white",
 };
 
 const POSITION_SEQUENCE: Position[] = ["DEF", "MID", "ATT"];
@@ -34,9 +34,9 @@ const GoalIcon = ({
 }) => (
   <div
     className={clsx(
-      "relative drop-shadow rounded-full p-[2px] sm:p-[3px]",
+      "relative rounded-full p-[2px] shadow-md sm:p-[3px]",
       sizeClass,
-      variant === "opposite" ? "bg-red-600/90" : "bg-white/80",
+      variant === "opposite" ? "bg-[var(--color-danger)]" : "bg-white",
     )}
   >
     <Image src="/goal-ball.svg" alt="Goal scored" fill sizes="20px" priority className="object-contain" />
@@ -46,7 +46,7 @@ const GoalIcon = ({
 const CardIcon = ({ active = true }: { active?: boolean }) => (
   <span
     className={clsx(
-      "block h-4 w-3 rounded-[2px] border border-yellow-700 bg-yellow-300 shadow transition sm:h-5 sm:w-4",
+      "block h-4 w-3 rounded-[2px] border border-[#8a5a10] bg-[var(--color-amber)] shadow transition sm:h-5 sm:w-4",
       !active && "opacity-40",
     )}
     title="Yellow card"
@@ -75,9 +75,9 @@ export const PlayerBadge = ({
   const jerseyClass = jerseyClasses[variant];
   const mismatchBorderClasses =
     mismatchLevel >= 2
-      ? "border-2 border-red-500 ring-2 ring-red-400/80 ring-offset-1 ring-offset-red-200/50"
+      ? "border-2 border-[var(--color-danger)] ring-2 ring-[var(--color-danger)]/70 ring-offset-1 ring-offset-red-100/50"
       : mismatchLevel === 1
-        ? "border-2 border-yellow-400 ring-2 ring-yellow-300/80 ring-offset-1 ring-offset-yellow-100/70"
+        ? "border-2 border-[var(--color-amber)] ring-2 ring-[var(--color-amber)]/70 ring-offset-1 ring-offset-yellow-100/70"
         : "border-2 border-transparent";
 
   const positiveGoals = stats?.goals ?? 0;
@@ -87,14 +87,14 @@ export const PlayerBadge = ({
   return (
     <div
       className={clsx(
-        "flex flex-col items-center gap-0.5 sm:gap-1",
-        isCustom && "rounded-3xl border border-sky-300/80 bg-sky-50/40 px-1 py-1",
+        "relative z-30 flex flex-col items-center gap-0.5 sm:gap-1",
+        isCustom && "rounded-xl border border-white/35 bg-white/10 px-1 py-1",
       )}
     >
       <div className="relative flex items-center justify-center">
         <div
           className={clsx(
-            "flex items-center justify-center rounded-xl sm:rounded-2xl font-bold uppercase shadow-lg",
+            "flex items-center justify-center rounded-xl font-black uppercase shadow-[0_8px_18px_rgba(0,0,0,0.28)]",
             large
               ? "h-9 w-9 sm:h-14 sm:w-14 text-[10px] sm:text-sm"
               : "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
@@ -135,7 +135,7 @@ export const PlayerBadge = ({
       </div>
       <p
         className={clsx(
-          "font-semibold text-white drop-shadow text-right",
+          "max-w-[7rem] font-black leading-tight text-white drop-shadow text-right sm:max-w-[10rem]",
           large ? "text-xl sm:text-3xl" : "text-sm sm:text-lg",
         )}
         dir="rtl"
@@ -267,13 +267,16 @@ const SlotPlayer = ({
   }, [showMenu]);
 
   return (
-    <div className="relative">
+    <div className="relative z-30">
       <div
         ref={setRefs}
         style={style}
         {...listeners}
         {...attributes}
-        className={clsx("cursor-grab touch-none", isDragging && "opacity-80")}
+        className={clsx(
+          "cursor-grab touch-none rounded-xl transition focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-amber)]",
+          isDragging && "opacity-80",
+        )}
         onClick={handleClick}
       >
         <PlayerBadge
@@ -289,7 +292,8 @@ const SlotPlayer = ({
       {showRemoveControl && (
         <button
           onClick={handleRemoveClick}
-          className="absolute -top-2 -right-2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow-lg"
+          className="absolute -right-2 -top-2 z-20 flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--color-danger)] text-xs font-black text-white shadow-lg"
+          aria-label={`Remove ${player.name}`}
         >
           X
         </button>
@@ -297,7 +301,7 @@ const SlotPlayer = ({
       {showMenu && (
         <div
           className={clsx(
-            "absolute z-10 w-36 transform rounded-xl border border-gray-200 bg-white p-2 text-xs shadow-xl",
+            "absolute z-20 w-44 transform rounded-xl border border-black/10 bg-[var(--color-panel)] p-3 text-xs text-[var(--color-ink)] shadow-2xl",
             menuVertical === "below" ? "top-full mt-1 origin-top" : "bottom-full mb-1 origin-bottom",
             menuAlignment === "left" && "left-0 -translate-x-0",
             menuAlignment === "right" && "right-0 translate-x-0",
@@ -306,13 +310,13 @@ const SlotPlayer = ({
           onClick={(event) => event.stopPropagation()}
         >
           <div className="mb-2 flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-slate-600">Goals</label>
+            <label className="text-[11px] font-black uppercase tracking-wide text-black/55">Goals</label>
             <div className="relative">
               <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">⚽</span>
               <select
                 value={goalSelectorValue}
                 onChange={handleGoalChange}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1 pl-6 pr-2 text-xs font-semibold text-slate-800"
+                className="field-input min-h-0 py-1 pl-6 pr-2 text-xs font-black"
               >
                 {[0, 1, 2, 3, 4, 5].map((value) => (
                   <option key={value} value={value}>
@@ -323,7 +327,7 @@ const SlotPlayer = ({
             </div>
           </div>
           <div className="mb-2 flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-red-600">opposite goals</label>
+            <label className="text-[11px] font-black uppercase tracking-wide text-[var(--color-danger)]">opposite goals</label>
             <div className="relative">
               <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
                 <GoalIcon variant="opposite" sizeClass="h-3 w-3" />
@@ -331,7 +335,7 @@ const SlotPlayer = ({
               <select
                 value={oppositeGoalSelectorValue}
                 onChange={handleOppositeGoalChange}
-                className="w-full rounded-lg border border-red-200 bg-red-50 py-1 pl-7 pr-2 text-xs font-semibold text-red-700"
+                className="field-input min-h-0 border-red-200 bg-red-50 py-1 pl-7 pr-2 text-xs font-black text-[var(--color-danger)]"
               >
                 {[0, 1, 2, 3, 4, 5].map((value) => (
                   <option key={value} value={value}>
@@ -342,13 +346,13 @@ const SlotPlayer = ({
             </div>
           </div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-600">Cards</span>
+            <span className="text-[11px] font-black uppercase tracking-wide text-black/55">Cards</span>
             <div className="flex gap-2">
               <button
                 onClick={toggleYellowCard}
                 className={clsx(
-                  "rounded-md border border-slate-200 bg-white p-1 shadow-sm transition hover:scale-105",
-                  stats?.yellowCard && "ring-2 ring-yellow-400",
+                  "rounded-md border border-[var(--color-line)] bg-white p-1 shadow-sm transition hover:-translate-y-0.5",
+                  stats?.yellowCard && "ring-2 ring-[var(--color-amber)]",
                 )}
                 aria-pressed={Boolean(stats?.yellowCard)}
                 aria-label="Toggle yellow card"
@@ -359,7 +363,7 @@ const SlotPlayer = ({
           </div>
           <button
             onClick={handleMiss}
-            className="mt-1 block w-full rounded-lg bg-red-600 px-2 py-1 text-center text-[11px] font-semibold text-white hover:bg-red-700"
+            className="btn-danger mt-1 block w-full min-h-0 px-2 py-2 text-center text-[11px]"
           >
             Absent
           </button>
@@ -408,23 +412,23 @@ export const PositionSlot = ({
 
   const overHighlightClass = isOver
     ? player
-      ? "bg-yellow-400/10 ring-2 ring-yellow-300"
-      : "bg-emerald-400/10 ring-2 ring-emerald-200"
+      ? "bg-[var(--color-amber)]/15 ring-2 ring-[var(--color-amber)]"
+      : "bg-white/10 ring-2 ring-white/75"
     : undefined;
-  const originHighlightClass = isOriginSlot ? "ring-2 ring-yellow-400 bg-yellow-100/10" : undefined;
+  const originHighlightClass = isOriginSlot ? "bg-[var(--color-amber)]/15 ring-2 ring-[var(--color-amber)]" : undefined;
 
   return (
     <div
       ref={setNodeRef}
       className={clsx(
-        "flex min-h-[60px] sm:min-h-[90px] w-full items-center justify-center rounded-2xl sm:rounded-3xl p-2 sm:p-3 transition",
+        "flex min-h-[68px] w-full items-center justify-center rounded-xl p-2 transition sm:min-h-[92px] sm:p-3",
         originHighlightClass,
         overHighlightClass,
         isEmpty && !isOver && "opacity-0",
       )}
     >
       {player ? (
-        <div className="relative">
+        <div className="relative z-30">
           <SlotPlayer
             player={player}
             slot={slot}
@@ -440,14 +444,14 @@ export const PositionSlot = ({
           />
           {showSwapPreview && isOver && player && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="absolute -left-8 rounded-full bg-yellow-300/95 p-2 text-yellow-900 shadow-lg ring-2 ring-yellow-400">
+              <div className="absolute -left-8 rounded-full bg-[var(--color-amber)] p-2 text-[var(--color-night)] shadow-lg ring-2 ring-white/70">
                 <ArrowsRightLeftIcon className="h-5 w-5 animate-pulse" />
               </div>
             </div>
           )}
           {showSwapPreview && isOriginSlot && player && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="absolute -right-8 rounded-full bg-yellow-300/95 p-2 text-yellow-900 shadow-lg ring-2 ring-yellow-400">
+              <div className="absolute -right-8 rounded-full bg-[var(--color-amber)] p-2 text-[var(--color-night)] shadow-lg ring-2 ring-white/70">
                 <ArrowsRightLeftIcon className="h-5 w-5 animate-pulse" />
               </div>
             </div>

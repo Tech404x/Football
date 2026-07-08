@@ -26,25 +26,25 @@ export const PlayerCard = ({
   inactive,
   isCustom,
 }: PlayerCardProps) => {
-  const borderClass = inactive ? "border-red-500" : "border-emerald-600";
-  const avatarClass = inactive ? "bg-red-300" : "bg-emerald-500";
-  const badgeClass = inactive ? "bg-red-600" : "bg-emerald-600";
+  const borderClass = inactive ? "border-[var(--color-line)]" : "border-[var(--color-pitch)]/45";
+  const avatarClass = inactive ? "bg-[var(--color-pitch)]" : "bg-[var(--color-pitch)]";
+  const badgeClass = inactive ? "bg-[var(--color-pitch-dark)]" : "bg-[var(--color-pitch-dark)]";
 
   return (
     <div
       className={clsx(
-        "flex w-full items-center gap-3 rounded-2xl border bg-white px-3 py-2 shadow-md transition",
+        "flex w-full items-center gap-2 rounded-xl border bg-white px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
         compact ? "py-1" : "py-2.5",
-        highlight && "ring-2 ring-emerald-400",
+        highlight && "ring-2 ring-[var(--color-amber)]/70",
         borderClass,
-        isCustom && "ring-2 ring-sky-300",
+        isCustom && "ring-2 ring-[#5a9eca]/50",
       )}
     >
-      <div className={clsx("relative h-10 w-10 overflow-hidden rounded-xl", avatarClass)}>
+      <div className={clsx("relative h-10 w-10 shrink-0 overflow-hidden rounded-lg", avatarClass)}>
         {numberLabel && (
           <span
             className={clsx(
-              "absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full px-2 text-[10px] font-bold text-white",
+              "absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full px-2 text-[10px] font-black text-white",
               badgeClass,
             )}
           >
@@ -53,13 +53,13 @@ export const PlayerCard = ({
         )}
         <Image src={player.photo} alt={player.name} fill sizes="40px" className="object-cover" />
       </div>
-      <div className="flex flex-1 flex-col text-right" dir="rtl">
-        <span className="text-sm font-semibold text-slate-900">{player.name}</span>
-        <span className="text-xs uppercase tracking-wide text-slate-500" dir="ltr">
+      <div className="flex min-w-0 max-w-[9rem] flex-col text-right" dir="rtl">
+        <span className="truncate text-sm font-black text-[var(--color-ink)]">{player.name}</span>
+        <span className="text-xs font-black uppercase tracking-wide text-black/45" dir="ltr">
           {note ?? player.preferredPosition}
         </span>
       </div>
-      {markControl && <div className="pl-1">{markControl}</div>}
+      {markControl && <div className="ml-auto pl-0.5">{markControl}</div>}
     </div>
   );
 };

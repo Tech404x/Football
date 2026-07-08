@@ -42,8 +42,10 @@ const PlayerPoolCard = ({
             onMouseDown={(event) => event.stopPropagation()}
             onClick={handleCheckboxClick}
             className={clsx(
-              "flex h-5 w-5 items-center justify-center rounded border",
-              marked ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 bg-white text-slate-400",
+              "flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-black transition",
+              marked
+                ? "border-[var(--color-pitch-dark)] bg-[var(--color-pitch-dark)] text-white"
+                : "border-[var(--color-line)] bg-white text-black/35 hover:border-[var(--color-amber)]",
             )}
             aria-pressed={marked}
             aria-label={marked ? "Unmark player" : "Mark player"}
@@ -79,7 +81,7 @@ const DraggablePoolPlayer = ({
       onToggleMark={onToggleMark}
       numberLabel={numberLabel}
       inactive={inactive}
-      className={clsx(disabled ? "opacity-60" : "", "cursor-default")}
+      className={clsx(disabled && "cursor-default")}
     />
   );
 };
@@ -104,7 +106,6 @@ export const PlayerPool = ({
   markedPlayerIds,
   onToggleMark,
   assignedPlayerIds,
-  hideToggle,
   toggleLabel,
 }: PlayerPoolProps) => {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -156,36 +157,38 @@ export const PlayerPool = ({
 
   return (
     <section
-      className="flex h-full flex-col rounded-3xl bg-white/70 p-4 shadow-lg"
+      className="flex h-full flex-col bg-[var(--color-panel)] p-4 sm:p-5"
       style={height ? { height } : undefined}
     >
-      <header className="mb-3 flex items-center justify-between">
+      <header className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Player Pool</p>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <p className="panel-kicker text-black/50">Player Pool</p>
+          <h2 className="mt-1 text-xl font-black text-[var(--color-ink)]">
             Available Players ({markedPlayerIds.length} of {players.length})
           </h2>
         </div>
-        {!hideToggle && (
-          <button
-            onClick={onToggle}
-            className="rounded-full border border-emerald-200 px-4 py-1 text-sm font-medium text-emerald-700"
-          >
-            {toggleLabel ?? (collapsed ? "Show" : "Hide")}
-          </button>
-        )}
+        <button
+          onClick={onToggle}
+          className="pool-close-button"
+          aria-label={toggleLabel ?? (collapsed ? "Show player pool" : "Close player pool")}
+          title={toggleLabel ?? (collapsed ? "Show" : "Close")}
+        >
+          X
+        </button>
       </header>
       <div className="flex-1 min-h-0">
         <div
           ref={setScrollRef}
           className={clsx(
-            "grid gap-3 overflow-hidden rounded-2xl border border-dashed border-emerald-200/60 p-3 transition-all",
+            "grid gap-3 overflow-hidden rounded-xl border border-dashed border-[var(--color-line)] bg-white/60 p-3 transition-all",
             collapsed ? "max-h-0 p-0 opacity-0" : "h-full overflow-y-auto",
-            isOver && "bg-emerald-50/80",
+            isOver && "border-[var(--color-amber)] bg-[#fff8e8]",
           )}
         >
           {sortedPlayers.length === 0 ? (
-            <p className="text-sm text-slate-500">Everyone is on the pitch.</p>
+            <p className="rounded-lg border border-dashed border-[var(--color-line)] p-5 text-center text-sm font-bold text-black/55">
+              Everyone is on the pitch.
+            </p>
           ) : (
             (() => {
               let activeNumber = 1;
@@ -201,7 +204,7 @@ export const PlayerPool = ({
                 lastGroup = groupKey;
                 return (
                   <div key={`${player.id}-${assigned ? "on" : "off"}`} className="flex flex-col gap-2">
-                    {showDivider && <hr className="border-dashed border-slate-200" />}
+                    {showDivider && <hr className="border-dashed border-[var(--color-line)]" />}
                     <DraggablePoolPlayer
                       player={player}
                       marked={marked}
