@@ -579,7 +579,7 @@ export default function HomePage() {
                                 onClick={() => setOrientationConfirmOpen(true)}
                                 aria-label="Toggle Pitch Orientation"
                                 title="Toggle pitch orientation"
-                                className={toolbarButtonClass()}
+                                className={clsx(toolbarButtonClass(), "max-sm:!hidden")}
                                 tabIndex={settingsOpen ? 0 : -1}
                               >
                                 {isHorizontal ? (

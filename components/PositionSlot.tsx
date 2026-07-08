@@ -112,7 +112,7 @@ export const PlayerBadge = ({
                   <GoalIcon key={`goal-${index}`} />
                 ))}
               {positiveGoals > 5 && (
-                <span className="text-xs font-bold text-white sm:text-sm">+{positiveGoals - 5}</span>
+                <span className="pl-1 text-xs font-bold text-white sm:text-sm">+{positiveGoals - 5}</span>
               )}
               {oppositeGoals > 0 && (
                 <div className="flex items-center gap-1 pl-1">
@@ -267,7 +267,7 @@ const SlotPlayer = ({
   }, [showMenu]);
 
   return (
-    <div className="relative z-30">
+    <div className={clsx("relative", showMenu ? "z-50" : "z-30")}>
       <div
         ref={setRefs}
         style={style}
@@ -275,7 +275,8 @@ const SlotPlayer = ({
         {...attributes}
         className={clsx(
           "cursor-grab touch-none rounded-xl transition focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-amber)]",
-          isDragging && "opacity-80",
+          isDragging ? "transition-none opacity-80" : "transition",
+          showMenu && "outline outline-2 outline-dashed outline-[var(--color-amber)]",
         )}
         onClick={handleClick}
       >
@@ -311,12 +312,12 @@ const SlotPlayer = ({
         >
           <div className="mb-2 flex flex-col gap-1">
             <label className="text-[11px] font-black uppercase tracking-wide text-black/55">Goals</label>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">⚽</span>
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-base leading-none">⚽</span>
               <select
                 value={goalSelectorValue}
                 onChange={handleGoalChange}
-                className="field-input min-h-0 py-1 pl-6 pr-2 text-xs font-black"
+                className="field-input min-h-0 flex-1 py-1 px-2 text-xs font-black"
               >
                 {[0, 1, 2, 3, 4, 5].map((value) => (
                   <option key={value} value={value}>
@@ -328,14 +329,14 @@ const SlotPlayer = ({
           </div>
           <div className="mb-2 flex flex-col gap-1">
             <label className="text-[11px] font-black uppercase tracking-wide text-[var(--color-danger)]">opposite goals</label>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-                <GoalIcon variant="opposite" sizeClass="h-3 w-3" />
+            <div className="flex items-center gap-2">
+              <span className="shrink-0">
+                <GoalIcon variant="opposite" sizeClass="h-4 w-4" />
               </span>
               <select
                 value={oppositeGoalSelectorValue}
                 onChange={handleOppositeGoalChange}
-                className="field-input min-h-0 border-red-200 bg-red-50 py-1 pl-7 pr-2 text-xs font-black text-[var(--color-danger)]"
+                className="field-input min-h-0 flex-1 border-red-200 bg-red-50 py-1 px-2 text-xs font-black text-[var(--color-danger)]"
               >
                 {[0, 1, 2, 3, 4, 5].map((value) => (
                   <option key={value} value={value}>
@@ -428,7 +429,7 @@ export const PositionSlot = ({
       )}
     >
       {player ? (
-        <div className="relative z-30">
+        <div className={clsx("relative", activeMenuPlayerId === player.id ? "z-50" : "z-30")}>
           <SlotPlayer
             player={player}
             slot={slot}
