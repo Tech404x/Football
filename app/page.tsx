@@ -464,9 +464,9 @@ export default function HomePage() {
 
   const handleUpdatePlayerStats = (playerId: string, updates: Partial<PlayerMatchStats>) => {
     setPlayerStats((prev) => {
-      const current: PlayerMatchStats = prev[playerId] ?? { goals: 0, oppositeGoals: 0, yellowCard: false };
+      const current: PlayerMatchStats = prev[playerId] ?? { goals: 0, oppositeGoals: 0, yellowCard: false, fiftyPercent: false };
       const next: PlayerMatchStats = { ...current, ...updates };
-      if (next.goals === 0 && next.oppositeGoals === 0 && !next.yellowCard) {
+      if (next.goals === 0 && next.oppositeGoals === 0 && !next.yellowCard && !next.fiftyPercent) {
         if (!prev[playerId]) {
           return prev;
         }

@@ -11,6 +11,7 @@ export type PlayerMatchStats = {
   goals: number;
   oppositeGoals: number;
   yellowCard: boolean;
+  fiftyPercent?: boolean;
 };
 
 export const POSITIONS: Position[] = ["DEF", "MID", "ATT"];

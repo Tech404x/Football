@@ -100,10 +100,19 @@ export const PlayerBadge = ({
               : "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
             jerseyClass,
             mismatchBorderClasses,
+            stats?.fiftyPercent && "ring-4 ring-blue-400 ring-offset-2 ring-offset-black/40 border-2 border-dashed border-blue-400",
           )}
         >
           {player.preferredPosition}
         </div>
+        {stats?.fiftyPercent && (
+          <span
+            className="absolute -top-2 -right-3 z-30 flex items-center gap-0.5 rounded-full border-2 border-white bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white shadow-lg sm:-top-2.5 sm:-right-4 sm:px-2 sm:text-xs"
+            title="Playing 50% / Half match"
+          >
+            50%
+          </span>
+        )}
         {hasStats && stats ? (
           <>
             <div className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1 text-[10px] sm:text-xs">
@@ -227,6 +236,10 @@ const SlotPlayer = ({
 
   const toggleYellowCard = () => {
     onUpdatePlayerStats(player.id, { yellowCard: !stats?.yellowCard });
+  };
+
+  const toggleFiftyPercent = () => {
+    onUpdatePlayerStats(player.id, { fiftyPercent: !stats?.fiftyPercent });
   };
 
   const goalSelectorValue = stats?.goals ?? 0;
@@ -362,12 +375,27 @@ const SlotPlayer = ({
               </button>
             </div>
           </div>
-          <button
-            onClick={handleMiss}
-            className="btn-danger mt-1 block w-full min-h-0 px-2 py-2 text-center text-[11px]"
-          >
-            Absent
-          </button>
+          <div className="mt-2 flex gap-1.5">
+            <button
+              onClick={toggleFiftyPercent}
+              className={clsx(
+                "flex-1 rounded-lg border py-1.5 text-center text-[11px] font-black transition-all",
+                stats?.fiftyPercent
+                  ? "border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-blue-300 scale-105"
+                  : "border-gray-300 bg-white text-black/70 hover:bg-gray-100 hover:text-black",
+              )}
+              aria-pressed={Boolean(stats?.fiftyPercent)}
+              title="Toggle 50% match appearance"
+            >
+              50%
+            </button>
+            <button
+              onClick={handleMiss}
+              className="btn-danger flex-1 min-h-0 px-2 py-1.5 text-center text-[11px]"
+            >
+              Absent
+            </button>
+          </div>
         </div>
       )}
     </div>
