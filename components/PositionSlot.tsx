@@ -53,10 +53,13 @@ const CardIcon = ({ active = true }: { active?: boolean }) => (
   />
 );
 
+export type SizeVariant = "default" | "expanded" | "fullscreen";
+
 export const PlayerBadge = ({
   player,
   teamId,
   large,
+  sizeVariant,
   alternate,
   mismatchLevel = 0,
   isCustom,
@@ -65,11 +68,13 @@ export const PlayerBadge = ({
   player: Player;
   teamId: TeamId;
   large?: boolean;
+  sizeVariant?: SizeVariant;
   alternate?: boolean;
   mismatchLevel?: number;
   isCustom?: boolean;
   stats?: PlayerMatchStats;
 }) => {
+  const effectiveSizeVariant: SizeVariant = sizeVariant ?? (large ? "fullscreen" : "default");
   const isTeamALight = alternate ? teamId === "team-b" : teamId === "team-a";
   const variant = isTeamALight ? "light" : "dark";
   const jerseyClass = jerseyClasses[variant];
@@ -84,6 +89,18 @@ export const PlayerBadge = ({
   const oppositeGoals = stats?.oppositeGoals ?? 0;
   const hasStats = Boolean(stats && (positiveGoals > 0 || oppositeGoals > 0 || stats.yellowCard));
 
+  const jerseySizeClass = {
+    fullscreen: "h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 text-xs sm:text-base md:text-lg",
+    expanded: "h-11 w-11 sm:h-16 sm:w-16 md:h-18 md:w-18 text-[11px] sm:text-sm md:text-base",
+    default: "h-10 w-10 sm:h-14 sm:w-14 md:h-16 md:w-16 text-[10px] sm:text-xs md:text-sm",
+  }[effectiveSizeVariant];
+
+  const nameSizeClass = {
+    fullscreen: "text-lg sm:text-2xl md:text-3xl max-w-[8.5rem] sm:max-w-[13rem]",
+    expanded: "text-base sm:text-xl md:text-2xl max-w-[8rem] sm:max-w-[12rem]",
+    default: "text-sm sm:text-lg md:text-xl max-w-[7.5rem] sm:max-w-[10rem]",
+  }[effectiveSizeVariant];
+
   return (
     <div
       className={clsx(
@@ -94,10 +111,8 @@ export const PlayerBadge = ({
       <div className="relative flex items-center justify-center">
         <div
           className={clsx(
-            "flex items-center justify-center rounded-xl font-black uppercase shadow-[0_8px_18px_rgba(0,0,0,0.28)]",
-            large
-              ? "h-9 w-9 sm:h-14 sm:w-14 text-[10px] sm:text-sm"
-              : "h-8 w-8 sm:h-14 sm:w-14 text-[9px] sm:text-sm",
+            "flex items-center justify-center rounded-xl font-black uppercase shadow-[0_8px_18px_rgba(0,0,0,0.28)] transition-all",
+            jerseySizeClass,
             jerseyClass,
             mismatchBorderClasses,
             stats?.fiftyPercent && "ring-4 ring-blue-400 ring-offset-2 ring-offset-black/40 border-2 border-dashed border-blue-400",
@@ -107,7 +122,14 @@ export const PlayerBadge = ({
         </div>
         {stats?.fiftyPercent && (
           <span
-            className="absolute -top-2 -right-3 z-30 flex items-center gap-0.5 rounded-full border-2 border-white bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white shadow-lg sm:-top-2.5 sm:-right-4 sm:px-2 sm:text-xs"
+            className={clsx(
+              "absolute z-30 flex items-center gap-0.5 rounded-full border-2 border-white bg-blue-600 font-black text-white shadow-lg",
+              effectiveSizeVariant === "fullscreen"
+                ? "-top-2.5 -right-3.5 px-2 py-0.5 text-xs sm:-top-3 sm:-right-4.5 sm:text-sm"
+                : effectiveSizeVariant === "expanded"
+                  ? "-top-2 -right-3 px-1.5 py-0.5 text-[11px] sm:-top-2.5 sm:-right-4 sm:text-xs"
+                  : "-top-2 -right-3 px-1.5 py-0.5 text-[10px] sm:-top-2.5 sm:-right-4 sm:text-xs",
+            )}
             title="Playing 50% / Half match"
           >
             50%
@@ -115,7 +137,16 @@ export const PlayerBadge = ({
         )}
         {hasStats && stats ? (
           <>
-            <div className="absolute -top-6 left-1/2 flex -translate-x-1/2 items-center gap-1 text-[10px] sm:text-xs">
+            <div
+              className={clsx(
+                "absolute left-1/2 flex -translate-x-1/2 items-center gap-1",
+                effectiveSizeVariant === "fullscreen"
+                  ? "-top-7 text-xs sm:-top-8 sm:text-sm"
+                  : effectiveSizeVariant === "expanded"
+                    ? "-top-6.5 text-[11px] sm:-top-7 sm:text-xs"
+                    : "-top-6 text-[10px] sm:text-xs",
+              )}
+            >
               {positiveGoals > 0 &&
                 Array.from({ length: Math.min(positiveGoals, 5) }).map((_, index) => (
                   <GoalIcon key={`goal-${index}`} />
@@ -144,8 +175,8 @@ export const PlayerBadge = ({
       </div>
       <p
         className={clsx(
-          "max-w-[7rem] font-black leading-tight text-white drop-shadow text-right sm:max-w-[10rem]",
-          large ? "text-xl sm:text-3xl" : "text-sm sm:text-lg",
+          "font-black leading-tight text-white drop-shadow text-center transition-all",
+          nameSizeClass,
         )}
         dir="rtl"
         style={{ textShadow: '-1px -1px 10px #000, 1px -1px 10px #000, -1px 1px 1px #000, 1px 1px 1px #000' }}
@@ -165,6 +196,7 @@ const SlotPlayer = ({
   showRemoveControl,
   onRemovePlayer,
   large,
+  sizeVariant,
   alternate,
   stats,
   onUpdatePlayerStats,
@@ -177,6 +209,7 @@ const SlotPlayer = ({
   showRemoveControl?: boolean;
   onRemovePlayer?: (playerId: string) => void;
   large?: boolean;
+  sizeVariant?: SizeVariant;
   alternate?: boolean;
   stats?: PlayerMatchStats;
   onUpdatePlayerStats: (playerId: string, updates: Partial<PlayerMatchStats>) => void;
@@ -297,6 +330,7 @@ const SlotPlayer = ({
           player={player}
           teamId={slot.teamId}
           large={large}
+          sizeVariant={sizeVariant}
           alternate={alternate}
           mismatchLevel={mismatchLevel}
           isCustom={isCustomPlayer}
@@ -411,6 +445,7 @@ export type PositionSlotProps = {
   showRemoveControl?: boolean;
   onRemovePlayer?: (playerId: string) => void;
   large?: boolean;
+  sizeVariant?: SizeVariant;
   alternate?: boolean;
   isOriginSlot?: boolean;
   showSwapPreview?: boolean;
@@ -427,6 +462,7 @@ export const PositionSlot = ({
   showRemoveControl,
   onRemovePlayer,
   large,
+  sizeVariant,
   alternate,
   isOriginSlot,
   showSwapPreview,
@@ -450,14 +486,14 @@ export const PositionSlot = ({
     <div
       ref={setNodeRef}
       className={clsx(
-        "flex min-h-[68px] w-full items-center justify-center rounded-xl p-2 transition sm:min-h-[92px] sm:p-3",
+        "pointer-events-none flex min-h-[72px] w-full items-center justify-center rounded-xl p-1 transition sm:min-h-[96px] sm:p-2",
         originHighlightClass,
         overHighlightClass,
         isEmpty && !isOver && "opacity-0",
       )}
     >
       {player ? (
-        <div className={clsx("relative", activeMenuPlayerId === player.id ? "z-50" : "z-30")}>
+        <div className={clsx("pointer-events-auto relative", activeMenuPlayerId === player.id ? "z-50" : "z-30")}>
           <SlotPlayer
             player={player}
             slot={slot}
@@ -467,6 +503,7 @@ export const PositionSlot = ({
             showRemoveControl={showRemoveControl}
             onRemovePlayer={onRemovePlayer}
             large={large}
+            sizeVariant={sizeVariant}
             alternate={alternate}
             stats={statsByPlayerId[player.id]}
             onUpdatePlayerStats={onUpdatePlayerStats}

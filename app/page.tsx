@@ -18,6 +18,7 @@ import {
   ArrowsRightLeftIcon,
   ArrowsUpDownIcon,
   Cog6ToothIcon,
+  ChevronUpIcon,
 } from "@heroicons/react/24/solid";
 import { Shirt as ShirtIcon } from "lucide-react";
 import { mockPlayers } from "@/lib/mockPlayers";
@@ -117,6 +118,7 @@ export default function HomePage() {
   const [alternateJerseys, setAlternateJerseys] = useState(false);
   const [isHorizontal, setIsHorizontal] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showOptionsBar, setShowOptionsBar] = useState(true);
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerMatchStats | undefined>>({});
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -389,7 +391,11 @@ export default function HomePage() {
             return stats;
           }
           const next = { ...stats };
-          delete next[playerId];
+          if (stats[playerId]?.fiftyPercent) {
+            next[playerId] = { goals: 0, oppositeGoals: 0, yellowCard: false, fiftyPercent: true };
+          } else {
+            delete next[playerId];
+          }
           return next;
         });
         return prev.filter((id) => id !== playerId);
@@ -457,7 +463,11 @@ export default function HomePage() {
         return stats;
       }
       const next = { ...stats };
-      delete next[playerId];
+      if (stats[playerId]?.fiftyPercent) {
+        next[playerId] = { goals: 0, oppositeGoals: 0, yellowCard: false, fiftyPercent: true };
+      } else {
+        delete next[playerId];
+      }
       return next;
     });
   };
@@ -483,150 +493,160 @@ export default function HomePage() {
 
   return (
     <main className="app-shell">
-      <div className="match-frame pb-10">
+      <div className="match-frame">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className="relative w-full" ref={boardRef} data-export-board>
             <div className={pitchWidthClass}>
-              <div
-                className={clsx(
-                  "match-toolbar",
-                  isFullscreen ? "sticky top-0 z-30" : "relative z-30",
-                )}
-                style={{
-                  gridTemplateColumns: isHorizontal
-                    ? "minmax(40rem, 1fr)"
-                    : "1fr",
-                }}
-              >
-                <div className="scoreboard" aria-label="Match scoreboard">
-                  {(() => {
-                    const leftTeamId: TeamId = alternateJerseys ? "team-b" : "team-a";
-                    const rightTeamId: TeamId = alternateJerseys ? "team-a" : "team-b";
-                    const leftGoals = teamGoals[leftTeamId];
-                    const rightGoals = teamGoals[rightTeamId];
-                    const diff = Math.abs(leftGoals - rightGoals);
-                    const leftScore = leftGoals >= rightGoals ? diff : 0;
-                    const rightScore = rightGoals >= leftGoals ? diff : 0;
-                    return (
-                      <div className="scoreboard-row">
-                        <div className="scoreboard-meta">
-                          <div className="team-chip light">
-                            <strong>{teamCounts[leftTeamId]}</strong>
-                            <span>Goals x{leftGoals}</span>
-                          </div>
-                          <div>
-                            <p className="panel-kicker">vs</p>
-                            <div className="match-score">{leftScore} - {rightScore}</div>
-                          </div>
-                          <div className="team-chip dark">
-                            <strong>{teamCounts[rightTeamId]}</strong>
-                            <span>Goals x{rightGoals}</span>
-                          </div>
-                        </div>
-                        <div className="scoreboard-actions">
-                          <button
-                            onClick={togglePlayerPool}
-                            className={toolbarButtonClass(showPool)}
-                            aria-label="Player Pool"
-                            title="Player pool"
-                          >
-                            <UserGroupIcon className="h-5 w-5" aria-hidden="true" />
-                          </button>
-                          <div className="settings-anchor" ref={settingsRef}>
-                            <button
-                              onClick={() => setSettingsOpen((prev) => !prev)}
-                              className={toolbarButtonClass(settingsOpen)}
-                              aria-label="Settings"
-                              aria-expanded={settingsOpen}
-                              aria-controls="match-settings-panel"
-                              title="Settings"
-                            >
-                              <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" />
-                            </button>
-                            <div
-                              id="match-settings-panel"
-                              className={clsx("settings-tray", settingsOpen && "is-open")}
-                              aria-hidden={!settingsOpen}
-                            >
-                              <button
-                                onClick={() => setAbsentMode((prev) => !prev)}
-                                className={toolbarButtonClass(absentMode, true)}
-                                aria-label="Absents"
-                                title="Mark absents"
-                                tabIndex={settingsOpen ? 0 : -1}
-                              >
-                                <NoSymbolIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                              <button
-                                onClick={() => setAlternateJerseys((prev) => !prev)}
-                                className={toolbarButtonClass(alternateJerseys)}
-                                aria-label="Swap Shirts"
-                                title="Swap shirts"
-                                tabIndex={settingsOpen ? 0 : -1}
-                              >
-                                <ShirtIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                              <button
-                                onClick={handleRegenerate}
-                                aria-label="Regenerate"
-                                title="Regenerate"
-                                className={toolbarButtonClass()}
-                                tabIndex={settingsOpen ? 0 : -1}
-                              >
-                                <ArrowPathIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                              <button
-                                onClick={() => setOrientationConfirmOpen(true)}
-                                aria-label="Toggle Pitch Orientation"
-                                title="Toggle pitch orientation"
-                                className={clsx(toolbarButtonClass(), "max-sm:!hidden")}
-                                tabIndex={settingsOpen ? 0 : -1}
-                              >
-                                {isHorizontal ? (
-                                  <ArrowsRightLeftIcon className="h-5 w-5" aria-hidden="true" />
-                                ) : (
-                                  <ArrowsUpDownIcon className="h-5 w-5" aria-hidden="true" />
-                                )}
-                              </button>
-                              <button
-                                onClick={handleResetRequest}
-                                aria-label="Reset"
-                                title="Reset squad"
-                                className={toolbarButtonClass(false, true)}
-                                tabIndex={settingsOpen ? 0 : -1}
-                              >
-                                <ArrowUturnLeftIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                              <button
-                                onClick={() => setModalOpen(true)}
-                                aria-label="Add Player"
-                                title="Add player"
-                                className={toolbarButtonClass()}
-                                tabIndex={settingsOpen ? 0 : -1}
-                              >
-                                <PlusIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
+              {showOptionsBar && (
+                <div
+                  className={clsx(
+                    "match-toolbar",
+                    isFullscreen ? "sticky top-0 z-30" : "relative z-30",
+                  )}
+                  style={{
+                    gridTemplateColumns: isHorizontal
+                      ? "minmax(40rem, 1fr)"
+                      : "1fr",
+                  }}
+                >
+                  <div className="scoreboard" aria-label="Match scoreboard">
+                    {(() => {
+                      const leftTeamId: TeamId = alternateJerseys ? "team-b" : "team-a";
+                      const rightTeamId: TeamId = alternateJerseys ? "team-a" : "team-b";
+                      const leftGoals = teamGoals[leftTeamId];
+                      const rightGoals = teamGoals[rightTeamId];
+                      const diff = Math.abs(leftGoals - rightGoals);
+                      const leftScore = leftGoals >= rightGoals ? diff : 0;
+                      const rightScore = rightGoals >= leftGoals ? diff : 0;
+                      return (
+                        <div className="scoreboard-row">
+                          <div className="scoreboard-meta">
+                            <div className="team-chip light">
+                              <strong>{teamCounts[leftTeamId]}</strong>
+                              <span>Goals x{leftGoals}</span>
+                            </div>
+                            <div>
+                              <p className="panel-kicker">vs</p>
+                              <div className="match-score">{leftScore} - {rightScore}</div>
+                            </div>
+                            <div className="team-chip dark">
+                              <strong>{teamCounts[rightTeamId]}</strong>
+                              <span>Goals x{rightGoals}</span>
                             </div>
                           </div>
-                          <button
-                            onClick={handleToggleFullscreen}
-                            className={toolbarButtonClass(isFullscreen)}
-                            aria-label="Exit fullscreen"
-                            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                          >
-                            {isFullscreen ? (
-                              <ArrowsPointingInIcon className="h-5 w-5" aria-hidden="true" />
-                            ) : (
-                              <ArrowsPointingOutIcon className="h-5 w-5" aria-hidden="true" />
-                            )}
-                          </button>
+                          <div className="scoreboard-actions">
+                            <button
+                              onClick={() => setShowOptionsBar(false)}
+                              className={toolbarButtonClass()}
+                              aria-label="Hide options bar"
+                              title="Hide options bar (click top goal to show)"
+                            >
+                              <ChevronUpIcon className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                            <div className="settings-anchor" ref={settingsRef}>
+                              <button
+                                onClick={() => setSettingsOpen((prev) => !prev)}
+                                className={toolbarButtonClass(settingsOpen)}
+                                aria-label="Settings"
+                                aria-expanded={settingsOpen}
+                                aria-controls="match-settings-panel"
+                                title="Settings"
+                              >
+                                <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" />
+                              </button>
+                              <div
+                                id="match-settings-panel"
+                                className={clsx("settings-tray", settingsOpen && "is-open")}
+                                aria-hidden={!settingsOpen}
+                              >
+                                <button
+                                  onClick={() => setAbsentMode((prev) => !prev)}
+                                  className={toolbarButtonClass(absentMode, true)}
+                                  aria-label="Absents"
+                                  title="Mark absents"
+                                  tabIndex={settingsOpen ? 0 : -1}
+                                >
+                                  <NoSymbolIcon className="h-5 w-5" aria-hidden="true" />
+                                </button>
+                                <button
+                                  onClick={() => setAlternateJerseys((prev) => !prev)}
+                                  className={toolbarButtonClass(alternateJerseys)}
+                                  aria-label="Swap Shirts"
+                                  title="Swap shirts"
+                                  tabIndex={settingsOpen ? 0 : -1}
+                                >
+                                  <ShirtIcon className="h-5 w-5" aria-hidden="true" />
+                                </button>
+                                <button
+                                  onClick={handleRegenerate}
+                                  aria-label="Regenerate"
+                                  title="Regenerate"
+                                  className={toolbarButtonClass()}
+                                  tabIndex={settingsOpen ? 0 : -1}
+                                >
+                                  <ArrowPathIcon className="h-5 w-5" aria-hidden="true" />
+                                </button>
+                                <button
+                                  onClick={() => setOrientationConfirmOpen(true)}
+                                  aria-label="Toggle Pitch Orientation"
+                                  title="Toggle pitch orientation"
+                                  className={clsx(toolbarButtonClass(), "max-sm:!hidden")}
+                                  tabIndex={settingsOpen ? 0 : -1}
+                                >
+                                  {isHorizontal ? (
+                                    <ArrowsRightLeftIcon className="h-5 w-5" aria-hidden="true" />
+                                  ) : (
+                                    <ArrowsUpDownIcon className="h-5 w-5" aria-hidden="true" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={handleResetRequest}
+                                  aria-label="Reset"
+                                  title="Reset squad"
+                                  className={toolbarButtonClass(false, true)}
+                                  tabIndex={settingsOpen ? 0 : -1}
+                                >
+                                  <ArrowUturnLeftIcon className="h-5 w-5" aria-hidden="true" />
+                                </button>
+                                <button
+                                  onClick={() => setModalOpen(true)}
+                                  aria-label="Add Player"
+                                  title="Add player"
+                                  className={toolbarButtonClass()}
+                                  tabIndex={settingsOpen ? 0 : -1}
+                                >
+                                  <PlusIcon className="h-5 w-5" aria-hidden="true" />
+                                </button>
+                              </div>
+                            </div>
+                            <button
+                              onClick={togglePlayerPool}
+                              className={toolbarButtonClass(showPool)}
+                              aria-label="Player Pool"
+                              title="Player pool"
+                            >
+                              <UserGroupIcon className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                            <button
+                              onClick={handleToggleFullscreen}
+                              className={toolbarButtonClass(isFullscreen)}
+                              aria-label="Exit fullscreen"
+                              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                            >
+                              {isFullscreen ? (
+                                <ArrowsPointingInIcon className="h-5 w-5" aria-hidden="true" />
+                              ) : (
+                                <ArrowsPointingOutIcon className="h-5 w-5" aria-hidden="true" />
+                              )}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()}
+                  </div>
                 </div>
-              </div>
-              <div className="field-stage">
+              )}
+              <div className={clsx("field-stage", !showOptionsBar && "rounded-2xl border-t border-white/10")}>
                 <SquadBoard
                   slots={FORMATION_SLOTS}
                   assignments={assignments}
@@ -640,6 +660,9 @@ export default function HomePage() {
                   isHorizontal={isHorizontal}
                   playerStats={playerStats}
                   onUpdatePlayerStats={handleUpdatePlayerStats}
+                  onToggleOptionsBar={() => setShowOptionsBar((prev) => !prev)}
+                  onTogglePlayerPool={() => setShowPool((prev) => !prev)}
+                  showOptionsBar={showOptionsBar}
                 />
               </div>
             </div>
@@ -674,12 +697,17 @@ export default function HomePage() {
               </div>
             )}
             {showPool && (
-              <div className="absolute inset-x-0 bottom-0 top-24 z-40 flex justify-end md:top-28">
+              <div
+                className={clsx(
+                  "absolute inset-x-0 bottom-0 z-40 flex justify-end",
+                  showOptionsBar ? "top-20 md:top-24" : "top-2 md:top-4",
+                )}
+              >
                 <div
                   className="absolute inset-0 bg-black/55 transition-opacity"
                   onClick={() => setShowPool(false)}
                 />
-                <div className="pool-panel relative ml-auto h-full w-[92%] max-w-3xl overflow-hidden transition-transform duration-300 ease-out sm:w-[80%]">
+                <div className="pool-panel relative ml-auto h-full w-full max-w-[21rem] sm:max-w-[22rem] overflow-hidden transition-transform duration-300 ease-out shadow-2xl">
                   <PlayerPool
                     players={poolPlayers}
                     collapsed={false}
@@ -689,6 +717,8 @@ export default function HomePage() {
                     assignedPlayerIds={Array.from(assignedPlayers)}
                     hideToggle
                     toggleLabel="Close"
+                    playerStats={playerStats}
+                    onUpdatePlayerStats={handleUpdatePlayerStats}
                   />
                 </div>
               </div>

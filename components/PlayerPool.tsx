@@ -3,7 +3,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import clsx from "clsx";
 import { useMemo, useRef, type MouseEvent } from "react";
-import type { Player } from "@/types/player";
+import type { Player, PlayerMatchStats } from "@/types/player";
 import { BASE_PLAYER_ID_SET } from "@/lib/mockPlayers";
 import { PlayerCard } from "./PlayerCard";
 
@@ -16,6 +16,8 @@ const PlayerPoolCard = ({
   numberLabel,
   className,
   inactive,
+  isFiftyPercent,
+  onToggleFiftyPercent,
 }: {
   player: Player;
   marked: boolean;
@@ -23,10 +25,17 @@ const PlayerPoolCard = ({
   numberLabel: string;
   className?: string;
   inactive?: boolean;
+  isFiftyPercent?: boolean;
+  onToggleFiftyPercent?: (playerId: string) => void;
 }) => {
   const handleCheckboxClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     onToggleMark(player.id);
+  };
+
+  const handleToggleFifty = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onToggleFiftyPercent?.(player.id);
   };
 
   return (
@@ -34,24 +43,43 @@ const PlayerPoolCard = ({
       <PlayerCard
         player={player}
         numberLabel={numberLabel}
-        highlight={!inactive}
+        highlight={!inactive && !isFiftyPercent}
         inactive={inactive}
         isCustom={!BASE_PLAYER_ID_SET.has(player.id)}
+        isFiftyPercent={isFiftyPercent}
         markControl={
-          <button
-            onMouseDown={(event) => event.stopPropagation()}
-            onClick={handleCheckboxClick}
-            className={clsx(
-              "flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-black transition",
-              marked
-                ? "border-[var(--color-pitch-dark)] bg-[var(--color-pitch-dark)] text-white"
-                : "border-[var(--color-line)] bg-white text-black/35 hover:border-[var(--color-amber)]",
-            )}
-            aria-pressed={marked}
-            aria-label={marked ? "Unmark player" : "Mark player"}
-          >
-            {marked ? "X" : ""}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={handleToggleFifty}
+              className={clsx(
+                "flex h-7 items-center justify-center rounded-lg px-1.5 text-[10px] font-black transition",
+                isFiftyPercent
+                  ? "border border-blue-600 bg-blue-600 text-white shadow-sm ring-1 ring-blue-300 hover:bg-blue-700"
+                  : "border border-dashed border-gray-300 bg-white text-black/35 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50",
+              )}
+              title={isFiftyPercent ? "50% match player (click to remove)" : "Set as 50% match player"}
+              aria-pressed={isFiftyPercent}
+            >
+              50%
+            </button>
+            <button
+              type="button"
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={handleCheckboxClick}
+              className={clsx(
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-black transition",
+                marked
+                  ? "border-[var(--color-pitch-dark)] bg-[var(--color-pitch-dark)] text-white shadow-sm"
+                  : "border-[var(--color-line)] bg-white text-black/35 hover:border-[var(--color-amber)]",
+              )}
+              aria-pressed={marked}
+              aria-label={marked ? "Unmark player" : "Mark player"}
+            >
+              {marked ? "✕" : ""}
+            </button>
+          </div>
         }
       />
     </div>
@@ -65,6 +93,8 @@ const DraggablePoolPlayer = ({
   numberLabel,
   assigned,
   inactive,
+  isFiftyPercent,
+  onToggleFiftyPercent,
 }: {
   player: Player;
   marked: boolean;
@@ -72,6 +102,8 @@ const DraggablePoolPlayer = ({
   numberLabel: string;
   assigned: boolean;
   inactive?: boolean;
+  isFiftyPercent?: boolean;
+  onToggleFiftyPercent?: (playerId: string) => void;
 }) => {
   const disabled = assigned || !marked;
   return (
@@ -81,6 +113,8 @@ const DraggablePoolPlayer = ({
       onToggleMark={onToggleMark}
       numberLabel={numberLabel}
       inactive={inactive}
+      isFiftyPercent={isFiftyPercent}
+      onToggleFiftyPercent={onToggleFiftyPercent}
       className={clsx(disabled && "cursor-default")}
     />
   );
@@ -96,6 +130,8 @@ export type PlayerPoolProps = {
   assignedPlayerIds: string[];
   hideToggle?: boolean;
   toggleLabel?: string;
+  playerStats?: Record<string, PlayerMatchStats | undefined>;
+  onUpdatePlayerStats?: (playerId: string, updates: Partial<PlayerMatchStats>) => void;
 };
 
 export const PlayerPool = ({
@@ -107,6 +143,8 @@ export const PlayerPool = ({
   onToggleMark,
   assignedPlayerIds,
   toggleLabel,
+  playerStats,
+  onUpdatePlayerStats,
 }: PlayerPoolProps) => {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const { isOver, setNodeRef } = useDroppable({ id: PLAYER_POOL_DROP_ID });
@@ -133,6 +171,14 @@ export const PlayerPool = ({
       return 3;
     };
     return [...players].sort((a, b) => {
+      const aFifty = Boolean(playerStats?.[a.id]?.fiftyPercent);
+      const bFifty = Boolean(playerStats?.[b.id]?.fiftyPercent);
+      if (aFifty && !bFifty) {
+        return -1;
+      }
+      if (!aFifty && bFifty) {
+        return 1;
+      }
       const priorityDiff = priority(a) - priority(b);
       if (priorityDiff !== 0) {
         return priorityDiff;
@@ -143,7 +189,7 @@ export const PlayerPool = ({
       }
       return a.name.localeCompare(b.name);
     });
-  }, [players, markedSet, assignedSet]);
+  }, [players, markedSet, assignedSet, playerStats]);
 
   const handleToggleMarkWithScroll = (playerId: string) => {
     const currentScroll = scrollContainerRef.current?.scrollTop ?? 0;
@@ -157,30 +203,30 @@ export const PlayerPool = ({
 
   return (
     <section
-      className="flex h-full flex-col bg-[var(--color-panel)] p-4 sm:p-5"
+      className="flex h-full flex-col bg-[var(--color-panel)] p-3 sm:p-4"
       style={height ? { height } : undefined}
     >
-      <header className="mb-4 flex items-start justify-between gap-4">
+      <header className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <p className="panel-kicker text-black/50">Player Pool</p>
-          <h2 className="mt-1 text-xl font-black text-[var(--color-ink)]">
+          <p className="panel-kicker text-black/50 text-[10px] sm:text-xs">Player Pool</p>
+          <h2 className="mt-0.5 text-sm sm:text-base font-black text-[var(--color-ink)]">
             Available Players ({markedPlayerIds.length} of {players.length})
           </h2>
         </div>
         <button
           onClick={onToggle}
-          className="pool-close-button"
+          className="pool-close-button h-8 w-8 min-h-0 min-w-0 text-xs shrink-0"
           aria-label={toggleLabel ?? (collapsed ? "Show player pool" : "Close player pool")}
           title={toggleLabel ?? (collapsed ? "Show" : "Close")}
         >
-          X
+          ✕
         </button>
       </header>
       <div className="flex-1 min-h-0">
         <div
           ref={setScrollRef}
           className={clsx(
-            "grid gap-3 overflow-hidden rounded-xl border border-dashed border-[var(--color-line)] bg-white/60 p-3 transition-all",
+            "grid gap-2 overflow-hidden rounded-xl border border-dashed border-[var(--color-line)] bg-white/60 p-2 sm:p-2.5 transition-all",
             collapsed ? "max-h-0 p-0 opacity-0" : "h-full overflow-y-auto",
             isOver && "border-[var(--color-amber)] bg-[#fff8e8]",
           )}
@@ -197,8 +243,9 @@ export const PlayerPool = ({
               return sortedPlayers.map((player) => {
                 const marked = markedSet.has(player.id);
                 const assigned = assignedSet.has(player.id);
+                const isFifty = Boolean(playerStats?.[player.id]?.fiftyPercent);
                 const numberLabel = marked ? String(activeNumber++) : String(inactiveNumber++);
-                const groupKey = marked ? (assigned ? 1 : 0) : assigned ? 3 : 2;
+                const groupKey = isFifty ? -1 : marked ? (assigned ? 1 : 0) : assigned ? 3 : 2;
                 const inactive = !marked;
                 const showDivider = lastGroup !== undefined && groupKey !== lastGroup;
                 lastGroup = groupKey;
@@ -212,6 +259,10 @@ export const PlayerPool = ({
                       numberLabel={numberLabel}
                       assigned={assigned}
                       inactive={inactive}
+                      isFiftyPercent={isFifty}
+                      onToggleFiftyPercent={(pid) => {
+                        onUpdatePlayerStats?.(pid, { fiftyPercent: !isFifty });
+                      }}
                     />
                   </div>
                 );

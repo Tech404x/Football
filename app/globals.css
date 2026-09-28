@@ -82,7 +82,7 @@ button:disabled {
   background:
     radial-gradient(circle at 12% 6%, rgba(241, 180, 76, 0.18), transparent 24rem),
     linear-gradient(140deg, #07120f 0%, #102119 44%, #07120f 100%);
-  padding: clamp(0.75rem, 2vw, 1.5rem);
+  padding: clamp(0.4rem, 1.5vw, 0.75rem);
 }
 
 .match-frame {
@@ -263,7 +263,7 @@ button:disabled {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   background: #0a1711;
   box-shadow: var(--shadow-panel);
-  padding: clamp(0.35rem, 1vw, 0.7rem);
+  padding: clamp(0.25rem, 0.8vw, 0.5rem);
 }
 
 .pitch-surface {

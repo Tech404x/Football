@@ -32,6 +32,9 @@ export type SquadBoardProps = {
   isHorizontal?: boolean;
   playerStats: Record<string, PlayerMatchStats | undefined>;
   onUpdatePlayerStats: (playerId: string, updates: Partial<PlayerMatchStats>) => void;
+  onToggleOptionsBar?: () => void;
+  onTogglePlayerPool?: () => void;
+  showOptionsBar?: boolean;
 };
 
 export const SquadBoard = ({
@@ -48,6 +51,9 @@ export const SquadBoard = ({
   isHorizontal,
   playerStats,
   onUpdatePlayerStats,
+  onToggleOptionsBar,
+  onTogglePlayerPool,
+  showOptionsBar = true,
 }: SquadBoardProps) => {
   const [activeMenuPlayerId, setActiveMenuPlayerId] = useState<string | null>(null);
   const slotMap = useMemo(() => {
@@ -102,14 +108,25 @@ export const SquadBoard = ({
     "pitch-surface isolate relative w-full",
     !isFullscreen && "overflow-hidden",
     "bg-[linear-gradient(180deg,var(--color-pitch-light),var(--color-pitch)_48%,var(--color-pitch-dark))]",
-    isFullscreen ? "min-h-[calc(100vh-96px)]" : isHorizontal ? "h-[52vh] min-h-[440px] sm:h-[48vh]" : "h-[78vh] min-h-[680px] sm:h-[66vh]",
+    isFullscreen
+      ? "h-[calc(100vh-2rem)] min-h-[580px]"
+      : showOptionsBar
+        ? isHorizontal
+          ? "h-[calc(100svh-6.25rem)] min-h-[440px]"
+          : "h-[calc(100svh-6.25rem)] min-h-[560px]"
+        : isHorizontal
+          ? "h-[calc(100svh-2rem)] min-h-[500px]"
+          : "h-[calc(100svh-2rem)] min-h-[620px]",
   );
+
+  const sizeVariant = isFullscreen ? "fullscreen" : !showOptionsBar ? "expanded" : "default";
 
   return (
     <section className="flex flex-col gap-3" onClick={() => setActiveMenuPlayerId(null)}>
       {/* Mobile-first pitch: full-width on mobile, constrained on larger screens */}
       <div className={fieldContainerClass}>
         <div className={pitchClass}>
+          {/* Pitch background markings */}
           <div className="pointer-events-none absolute inset-0 z-0">
             <div className="absolute inset-1 sm:inset-2 rounded-xl border-2 border-white/55"></div>
             <div
@@ -123,40 +140,17 @@ export const SquadBoard = ({
             ></div>
             <div className="absolute left-1/2 top-1/2 h-16 w-16 sm:h-24 sm:w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 sm:border-4 border-white/65"></div>
             <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
-            <div className="absolute inset-0">
-              {["home", "away"].map((side) => (
-                <div
-                  key={`${side}-goal`}
-                  className={clsx(
-                    "absolute flex items-center justify-center overflow-hidden rounded-md",
-                    isHorizontal
-                      ? side === "home"
-                        ? "left-1 top-1/2 -translate-y-1/2 h-16 sm:h-24 w-16 sm:w-24"
-                        : "right-1 top-1/2 -translate-y-1/2 h-16 sm:h-24 w-16 sm:w-24"
-                      : side === "home"
-                        ? "top-1 left-1/2 -translate-x-1/2 w-32 sm:w-40 h-10 sm:h-14"
-                        : "bottom-1 left-1/2 -translate-x-1/2 w-32 sm:w-40 h-10 sm:h-14"
-                  )}
-                >
-                  <div className="relative h-full w-full rounded-md border-[3px] border-white/90 bg-gradient-to-br from-white/35 to-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
-                    <div className="absolute inset-[3px] rounded-sm border border-white/70"></div>
-                    <div className="absolute inset-[5px] rounded-sm opacity-80 bg-[linear-gradient(90deg,rgba(255,255,255,0.45)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.45)_1px,transparent_1px)] bg-[length:8px_8px]"></div>
-                    <div className="absolute inset-y-2 left-2 w-1 bg-white/50 blur-[1px]"></div>
-                    <div className="absolute inset-y-2 right-2 w-1 bg-white/50 blur-[1px]"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
+
           {/* Team positioning on football field */}
-          <div className="absolute inset-1 z-20 sm:inset-2">
+          <div className="pointer-events-none absolute inset-1 z-30 sm:inset-2">
             {/* Team A (White) */}
             {teamIds.includes("team-a") && (() => {
               const teamASlots = slots.filter((slot) => slot.teamId === "team-a");
               return (
                 <div
                   className={clsx(
-                    "absolute flex px-3 sm:px-4",
+                    "pointer-events-none absolute flex px-3 sm:px-4",
                     isHorizontal
                       ? "left-0 top-0 bottom-0 w-1/2 flex-row justify-center gap-6 sm:gap-10"
                       : "top-0 left-0 right-0 h-1/2 flex-col justify-evenly"
@@ -166,9 +160,9 @@ export const SquadBoard = ({
                     const lineSlots = buildLineSlots(teamASlots, line);
                     if (lineSlots.length === 0) return null;
                     return (
-                      <div key={`team-a-${line}`} className={isHorizontal ? "h-full" : "w-full"}>
+                      <div key={`team-a-${line}`} className={clsx("pointer-events-none", isHorizontal ? "h-full" : "w-full")}>
                         <div
-                          className={clsx("grid gap-2 sm:gap-4", isHorizontal ? "h-full" : "w-full")}
+                          className={clsx("pointer-events-none grid gap-2 sm:gap-4", isHorizontal ? "h-full" : "w-full")}
                           style={lineStyle(lineSlots.length, isHorizontal || false)}
                         >
                           {lineSlots.map((slot) => {
@@ -185,6 +179,7 @@ export const SquadBoard = ({
                                 showRemoveControl={showAbsents}
                                 onRemovePlayer={onMissPlayer}
                                 large={isFullscreen}
+                                sizeVariant={sizeVariant}
                                 alternate={alternateJerseys}
                                 isOriginSlot={slot.id === dragOriginSlotId}
                                 showSwapPreview={showSwapPreview}
@@ -207,7 +202,7 @@ export const SquadBoard = ({
               return (
                 <div
                   className={clsx(
-                    "absolute flex px-3 sm:px-4",
+                    "pointer-events-none absolute flex px-3 sm:px-4",
                     isHorizontal
                       ? "right-0 top-0 bottom-0 w-1/2 flex-row justify-center gap-6 sm:gap-10"
                       : "bottom-0 left-0 right-0 h-1/2 flex-col justify-evenly"
@@ -217,9 +212,9 @@ export const SquadBoard = ({
                     const lineSlots = buildLineSlots(teamBSlots, line);
                     if (lineSlots.length === 0) return null;
                     return (
-                      <div key={`team-b-${line}`} className={isHorizontal ? "h-full" : "w-full"}>
+                      <div key={`team-b-${line}`} className={clsx("pointer-events-none", isHorizontal ? "h-full" : "w-full")}>
                         <div
-                          className={clsx("grid gap-2 sm:gap-4", isHorizontal ? "h-full" : "w-full")}
+                          className={clsx("pointer-events-none grid gap-2 sm:gap-4", isHorizontal ? "h-full" : "w-full")}
                           style={lineStyle(lineSlots.length, isHorizontal || false)}
                         >
                           {lineSlots.map((slot) => {
@@ -236,6 +231,7 @@ export const SquadBoard = ({
                                 showRemoveControl={showAbsents}
                                 onRemovePlayer={onMissPlayer}
                                 large={isFullscreen}
+                                sizeVariant={sizeVariant}
                                 alternate={alternateJerseys}
                                 isOriginSlot={slot.id === dragOriginSlotId}
                                 showSwapPreview={showSwapPreview}
@@ -251,6 +247,80 @@ export const SquadBoard = ({
                 </div>
               );
             })()}
+          </div>
+
+          {/* Interactive Goals Layer at z-40 (above team slots so entire net and middle are pressable) */}
+          <div className="pointer-events-none absolute inset-0 z-40">
+            {["home", "away"].map((side) => {
+              const isTopGoal = side === "home";
+              const handleClick = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveMenuPlayerId(null);
+                if (isTopGoal) {
+                  onToggleOptionsBar?.();
+                } else {
+                  onTogglePlayerPool?.();
+                }
+              };
+              const tooltipText = isTopGoal
+                ? (showOptionsBar ? "Click goal to hide options bar" : "Click goal to show options bar")
+                : "Click goal to show player pool";
+
+              return (
+                <button
+                  type="button"
+                  key={`${side}-goal`}
+                  onClick={handleClick}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-label={tooltipText}
+                  title={tooltipText}
+                  className={clsx(
+                    "pointer-events-auto absolute flex items-center justify-center cursor-pointer select-none transition-all duration-150 active:scale-95 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 z-40",
+                    isHorizontal
+                      ? side === "home"
+                        ? "left-0 top-1/2 -translate-y-1/2 w-16 sm:w-20 md:w-24 h-44 sm:h-52 md:h-60"
+                        : "right-0 top-1/2 -translate-y-1/2 w-16 sm:w-20 md:w-24 h-44 sm:h-52 md:h-60"
+                      : side === "home"
+                        ? "top-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 md:w-72 h-14 sm:h-16 md:h-20"
+                        : "bottom-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 md:w-72 h-14 sm:h-16 md:h-20"
+                  )}
+                >
+                  {/* Goal Frame & Net: The whole area is the goal button */}
+                  <div
+                    className={clsx(
+                      "pointer-events-none relative flex h-full w-full items-center justify-center overflow-hidden transition-all duration-200 shadow-[0_8px_24px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_24px_rgba(241,180,76,0.7)] group-active:brightness-95",
+                      isHorizontal
+                        ? side === "home"
+                          ? "rounded-r-xl border-[3px] border-l-0 border-white/90 bg-gradient-to-r from-white/30 to-white/10 group-hover:border-amber-300"
+                          : "rounded-l-xl border-[3px] border-r-0 border-white/90 bg-gradient-to-l from-white/30 to-white/10 group-hover:border-amber-300"
+                        : side === "home"
+                          ? "rounded-b-xl border-[3px] border-t-0 border-white/90 bg-gradient-to-b from-white/30 to-white/10 group-hover:border-amber-300"
+                          : "rounded-t-xl border-[3px] border-b-0 border-white/90 bg-gradient-to-t from-white/30 to-white/10 group-hover:border-amber-300"
+                    )}
+                  >
+                    {/* Realistic Soccer Net Mesh Pattern covering the whole net area */}
+                    <div className="pointer-events-none absolute inset-0 opacity-75 group-hover:opacity-95 transition-opacity bg-[linear-gradient(90deg,rgba(255,255,255,0.45)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.45)_1px,transparent_1px)] bg-[length:6px_6px]" />
+                    <div className="pointer-events-none absolute inset-0 bg-white/5 group-hover:bg-amber-400/15 transition-colors" />
+
+                    {/* Goal Button Pill in Net */}
+                    <div className="pointer-events-none relative z-10 flex items-center gap-1.5 rounded-full border border-white/40 bg-black/65 px-3 py-1 text-xs font-black uppercase text-white shadow-lg backdrop-blur-sm transition-all group-hover:border-amber-300 group-hover:bg-amber-400 group-hover:text-black group-hover:scale-105">
+                      {isTopGoal ? (
+                        <>
+                          <span className="text-amber-300 group-hover:text-black">⚡</span>
+                          <span>{showOptionsBar ? "Options ▲" : "Options ▼"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-amber-300 group-hover:text-black">👥</span>
+                          <span>Players Pool</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
