@@ -142,6 +142,36 @@ export const SquadBoard = ({
             <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
           </div>
 
+          {/* Pitch Player Counts (100% visible, left to top goal) */}
+          <div
+            className="pointer-events-none absolute top-2 left-2.5 sm:top-2.5 sm:left-4 z-20 flex items-center gap-1.5 rounded-full border border-white/35 bg-black/65 px-2 py-0.5 sm:px-2.5 sm:py-1 backdrop-blur-sm shadow-md transition-opacity select-none"
+            aria-label="Players on pitch"
+          >
+            <span
+              className={clsx(
+                "flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded text-[10px] sm:text-xs font-black shadow-sm",
+                alternateJerseys
+                  ? "bg-[#070b12] text-white border border-white/30"
+                  : "bg-[var(--color-chalk)] text-[var(--color-pitch-dark)] border border-black/10"
+              )}
+              title={alternateJerseys ? "Dark team player count" : "White team player count"}
+            >
+              {filledByTeam["team-a"] ?? 0}
+            </span>
+            <span className="text-[10px] sm:text-xs font-black text-white/80">:</span>
+            <span
+              className={clsx(
+                "flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded text-[10px] sm:text-xs font-black shadow-sm",
+                alternateJerseys
+                  ? "bg-[var(--color-chalk)] text-[var(--color-pitch-dark)] border border-black/10"
+                  : "bg-[#070b12] text-white border border-white/30"
+              )}
+              title={alternateJerseys ? "White team player count" : "Dark team player count"}
+            >
+              {filledByTeam["team-b"] ?? 0}
+            </span>
+          </div>
+
           {/* Interactive Goals Layer at z-20 (behind active player popovers at z-50) */}
           <div className="pointer-events-none absolute inset-0 z-20">
             {["home", "away"].map((side) => {

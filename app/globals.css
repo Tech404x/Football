@@ -94,28 +94,49 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(12rem, 1fr) minmax(0, auto);
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   border: 1px solid rgba(244, 247, 239, 0.14);
   border-bottom: 0;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: rgba(7, 18, 15, 0.92);
   box-shadow: var(--shadow-panel);
   color: var(--color-chalk);
-  padding: 0.85rem clamp(0.8rem, 2vw, 1.25rem);
+  padding: 0.45rem 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .match-toolbar {
+    gap: 1rem;
+    padding: 0.85rem clamp(0.8rem, 2vw, 1.25rem);
+  }
 }
 
 .panel-kicker {
   color: rgba(244, 247, 239, 0.62);
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  .panel-kicker {
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+  }
 }
 
 .toolbar-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.35rem;
+}
+
+@media (min-width: 640px) {
+  .toolbar-actions {
+    gap: 0.45rem;
+  }
 }
 
 .toolbar-actions.end {
@@ -128,20 +149,29 @@ button:disabled {
 
 .settings-tray {
   position: fixed;
-  right: max(0.75rem, calc((100vw - 78rem) / 2 + 2rem));
-  top: 5.4rem;
+  right: max(0.5rem, calc((100vw - 78rem) / 2 + 1rem));
+  top: 4.2rem;
   z-index: 60;
   display: flex;
-  gap: 0.45rem;
+  gap: 0.3rem;
   border: 1px solid rgba(244, 247, 239, 0.14);
   border-radius: var(--radius-md);
   background: rgba(7, 18, 15, 0.96);
   box-shadow: var(--shadow-panel);
-  padding: 0.35rem;
+  padding: 0.3rem;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-0.45rem);
   transition: opacity var(--transition-ui), transform var(--transition-ui);
+}
+
+@media (min-width: 640px) {
+  .settings-tray {
+    right: max(0.75rem, calc((100vw - 78rem) / 2 + 2rem));
+    top: 5.4rem;
+    gap: 0.45rem;
+    padding: 0.35rem;
+  }
 }
 
 .settings-tray.is-open {
@@ -153,8 +183,10 @@ button:disabled {
 .icon-button {
   position: relative;
   display: inline-flex;
-  min-height: 2.75rem;
-  min-width: 2.75rem;
+  min-height: 2.15rem;
+  min-width: 2.15rem;
+  height: 2.15rem;
+  width: 2.15rem;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(244, 247, 239, 0.16);
@@ -162,6 +194,15 @@ button:disabled {
   background: rgba(244, 247, 239, 0.08);
   color: var(--color-chalk);
   transition: transform var(--transition-ui), border-color var(--transition-ui), background var(--transition-ui), color var(--transition-ui);
+}
+
+@media (min-width: 640px) {
+  .icon-button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    height: auto;
+    width: auto;
+  }
 }
 
 .icon-button:hover {
@@ -183,54 +224,95 @@ button:disabled {
 
 .scoreboard {
   max-width: 100%;
-  min-width: min(40rem, 100%);
+  width: 100%;
   border: 1px solid rgba(244, 247, 239, 0.16);
   border-radius: var(--radius-md);
   background: rgba(244, 247, 239, 0.08);
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.45rem;
   overflow: visible;
   text-align: center;
+}
+
+@media (min-width: 640px) {
+  .scoreboard {
+    min-width: min(40rem, 100%);
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 .scoreboard-row {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.35rem;
   justify-content: space-between;
   min-width: 0;
   white-space: nowrap;
 }
 
-.scoreboard-meta,
-.scoreboard-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
+@media (min-width: 640px) {
+  .scoreboard-row {
+    gap: 0.55rem;
+  }
 }
 
 .scoreboard-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   justify-content: flex-start;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .scoreboard-meta {
+    gap: 0.55rem;
+  }
 }
 
 .scoreboard-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   justify-content: flex-end;
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .scoreboard-actions {
+    gap: 0.45rem;
+  }
 }
 
 .team-chip {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.08rem;
   justify-items: center;
-  min-width: 3.25rem;
+  min-width: 2.35rem;
+}
+
+@media (min-width: 640px) {
+  .team-chip {
+    gap: 0.15rem;
+    min-width: 3.25rem;
+  }
 }
 
 .team-chip strong {
   display: grid;
-  height: 1.9rem;
-  width: 1.9rem;
+  height: 1.55rem;
+  width: 1.55rem;
   place-items: center;
   border-radius: 999px;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
+}
+
+@media (min-width: 640px) {
+  .team-chip strong {
+    height: 1.9rem;
+    width: 1.9rem;
+    font-size: 0.9rem;
+  }
 }
 
 .team-chip.light strong {
@@ -246,16 +328,24 @@ button:disabled {
 
 .team-chip span {
   color: rgba(244, 247, 239, 0.66);
-  font-size: 0.56rem;
+  font-size: 0.5rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+@media (min-width: 640px) {
+  .team-chip span {
+    font-size: 0.56rem;
+    letter-spacing: 0.08em;
+  }
 }
 
 .match-score {
   color: var(--color-chalk);
-  font-size: clamp(1.05rem, 2vw, 1.55rem);
+  font-size: clamp(0.95rem, 2vw, 1.55rem);
   font-weight: 900;
+  line-height: 1;
 }
 
 .field-stage {

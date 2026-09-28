@@ -541,7 +541,7 @@ export default function HomePage() {
                               aria-label="Hide options bar"
                               title="Hide options bar (click top goal to show)"
                             >
-                              <ChevronUpIcon className="h-5 w-5" aria-hidden="true" />
+                              <ChevronUpIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                             </button>
                             <div className="settings-anchor" ref={settingsRef}>
                               <button
@@ -552,7 +552,7 @@ export default function HomePage() {
                                 aria-controls="match-settings-panel"
                                 title="Settings"
                               >
-                                <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" />
+                                <Cog6ToothIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                               </button>
                               <div
                                 id="match-settings-panel"
@@ -566,7 +566,7 @@ export default function HomePage() {
                                   title="Mark absents"
                                   tabIndex={settingsOpen ? 0 : -1}
                                 >
-                                  <NoSymbolIcon className="h-5 w-5" aria-hidden="true" />
+                                  <NoSymbolIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                                 </button>
                                 <button
                                   onClick={() => setAlternateJerseys((prev) => !prev)}
@@ -575,7 +575,7 @@ export default function HomePage() {
                                   title="Swap shirts"
                                   tabIndex={settingsOpen ? 0 : -1}
                                 >
-                                  <ShirtIcon className="h-5 w-5" aria-hidden="true" />
+                                  <ShirtIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                                 </button>
                                 <button
                                   onClick={handleRegenerate}
@@ -584,7 +584,7 @@ export default function HomePage() {
                                   className={toolbarButtonClass()}
                                   tabIndex={settingsOpen ? 0 : -1}
                                 >
-                                  <ArrowPathIcon className="h-5 w-5" aria-hidden="true" />
+                                  <ArrowPathIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                                 </button>
                                 <button
                                   onClick={() => setOrientationConfirmOpen(true)}
@@ -594,9 +594,9 @@ export default function HomePage() {
                                   tabIndex={settingsOpen ? 0 : -1}
                                 >
                                   {isHorizontal ? (
-                                    <ArrowsRightLeftIcon className="h-5 w-5" aria-hidden="true" />
+                                    <ArrowsRightLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                                   ) : (
-                                    <ArrowsUpDownIcon className="h-5 w-5" aria-hidden="true" />
+                                    <ArrowsUpDownIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                                   )}
                                 </button>
                                 <button
@@ -606,7 +606,7 @@ export default function HomePage() {
                                   className={toolbarButtonClass(false, true)}
                                   tabIndex={settingsOpen ? 0 : -1}
                                 >
-                                  <ArrowUturnLeftIcon className="h-5 w-5" aria-hidden="true" />
+                                  <ArrowUturnLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                                 </button>
                                 <button
                                   onClick={() => setModalOpen(true)}
@@ -615,7 +615,7 @@ export default function HomePage() {
                                   className={toolbarButtonClass()}
                                   tabIndex={settingsOpen ? 0 : -1}
                                 >
-                                  <PlusIcon className="h-5 w-5" aria-hidden="true" />
+                                  <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                                 </button>
                               </div>
                             </div>
@@ -625,7 +625,7 @@ export default function HomePage() {
                               aria-label="Player Pool"
                               title="Player pool"
                             >
-                              <UserGroupIcon className="h-5 w-5" aria-hidden="true" />
+                              <UserGroupIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                             </button>
                             <button
                               onClick={handleToggleFullscreen}
@@ -634,9 +634,9 @@ export default function HomePage() {
                               title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
                             >
                               {isFullscreen ? (
-                                <ArrowsPointingInIcon className="h-5 w-5" aria-hidden="true" />
+                                <ArrowsPointingInIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                               ) : (
-                                <ArrowsPointingOutIcon className="h-5 w-5" aria-hidden="true" />
+                                <ArrowsPointingOutIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                               )}
                             </button>
                           </div>
@@ -704,10 +704,10 @@ export default function HomePage() {
                 )}
               >
                 <div
-                  className="absolute inset-0 bg-black/55 transition-opacity"
+                  className="absolute inset-0 bg-black/40 transition-opacity"
                   onClick={() => setShowPool(false)}
                 />
-                <div className="pool-panel relative ml-auto h-full w-full max-w-[21rem] sm:max-w-[22rem] overflow-hidden transition-transform duration-300 ease-out shadow-2xl">
+                <div className="pool-panel relative ml-auto h-full w-full max-w-[15.5rem] sm:max-w-[17rem] overflow-hidden transition-transform duration-300 ease-out shadow-2xl">
                   <PlayerPool
                     players={poolPlayers}
                     collapsed={false}

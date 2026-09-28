@@ -48,16 +48,16 @@ const PlayerPoolCard = ({
         isCustom={!BASE_PLAYER_ID_SET.has(player.id)}
         isFiftyPercent={isFiftyPercent}
         markControl={
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onMouseDown={(event) => event.stopPropagation()}
               onClick={handleToggleFifty}
               className={clsx(
-                "flex h-7 items-center justify-center rounded-lg px-1.5 text-[10px] font-black transition",
+                "flex h-6.5 items-center justify-center rounded-lg px-1.5 text-[9.5px] font-black transition",
                 isFiftyPercent
                   ? "border border-blue-600 bg-blue-600 text-white shadow-sm ring-1 ring-blue-300 hover:bg-blue-700"
-                  : "border border-dashed border-gray-300 bg-white text-black/35 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50",
+                  : "border border-dashed border-gray-300 bg-white text-black/40 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50",
               )}
               title={isFiftyPercent ? "50% match player (click to remove)" : "Set as 50% match player"}
               aria-pressed={isFiftyPercent}
@@ -69,7 +69,7 @@ const PlayerPoolCard = ({
               onMouseDown={(event) => event.stopPropagation()}
               onClick={handleCheckboxClick}
               className={clsx(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-black transition",
+                "flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full border text-xs font-black transition",
                 marked
                   ? "border-[var(--color-pitch-dark)] bg-[var(--color-pitch-dark)] text-white shadow-sm"
                   : "border-[var(--color-line)] bg-white text-black/35 hover:border-[var(--color-amber)]",
@@ -203,19 +203,19 @@ export const PlayerPool = ({
 
   return (
     <section
-      className="flex h-full flex-col bg-[var(--color-panel)] p-3 sm:p-4"
+      className="flex h-full flex-col bg-[var(--color-panel)] p-2.5 sm:p-3"
       style={height ? { height } : undefined}
     >
-      <header className="mb-3 flex items-start justify-between gap-2">
+      <header className="mb-2 flex items-start justify-between gap-1.5">
         <div>
-          <p className="panel-kicker text-black/50 text-[10px] sm:text-xs">Player Pool</p>
-          <h2 className="mt-0.5 text-sm sm:text-base font-black text-[var(--color-ink)]">
+          <p className="panel-kicker text-black/50 text-[10px]">Player Pool</p>
+          <h2 className="mt-0.5 text-xs sm:text-sm font-black text-[var(--color-ink)]">
             Available Players ({markedPlayerIds.length} of {players.length})
           </h2>
         </div>
         <button
           onClick={onToggle}
-          className="pool-close-button h-8 w-8 min-h-0 min-w-0 text-xs shrink-0"
+          className="pool-close-button h-7 w-7 min-h-0 min-w-0 text-xs shrink-0"
           aria-label={toggleLabel ?? (collapsed ? "Show player pool" : "Close player pool")}
           title={toggleLabel ?? (collapsed ? "Show" : "Close")}
         >
@@ -226,7 +226,7 @@ export const PlayerPool = ({
         <div
           ref={setScrollRef}
           className={clsx(
-            "grid gap-2 overflow-hidden rounded-xl border border-dashed border-[var(--color-line)] bg-white/60 p-2 sm:p-2.5 transition-all",
+            "grid gap-1.5 overflow-hidden rounded-xl border border-dashed border-[var(--color-line)] bg-white/60 p-1.5 sm:p-2 transition-all",
             collapsed ? "max-h-0 p-0 opacity-0" : "h-full overflow-y-auto",
             isOver && "border-[var(--color-amber)] bg-[#fff8e8]",
           )}
