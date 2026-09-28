@@ -289,7 +289,7 @@ const SlotPlayer = ({
       }
       const rect = node.getBoundingClientRect();
       const menuWidth = 160;
-      const menuHeight = 175;
+      const menuHeight = 230;
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const centerX = rect.left + rect.width / 2;
@@ -301,7 +301,8 @@ const SlotPlayer = ({
       } else {
         setMenuAlignment("center");
       }
-      if (rect.bottom + menuHeight > viewportHeight - padding) {
+      const isLowerHalf = slot.teamId === "team-b" || rect.top > viewportHeight * 0.45;
+      if (isLowerHalf || rect.bottom + menuHeight > viewportHeight - padding) {
         setMenuVertical("above");
       } else {
         setMenuVertical("below");
